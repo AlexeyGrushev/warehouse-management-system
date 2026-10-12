@@ -6,28 +6,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.errors import register_error_handlers
-from app.core.security import create_access_token, hash_password
 from app.db.session import get_session
 from app.modules.auth.deps import require_role
 from app.modules.auth.models import User
-
-PASSWORD = "correct-password"
-
-
-def make_user(session: Session, role: str = "storekeeper", **overrides) -> User:
-    values = {
-        "email": f"{role}@example.com",
-        "password_hash": hash_password(PASSWORD),
-        "role": role,
-    }
-    user = User(**{**values, **overrides})
-    session.add(user)
-    session.flush()
-    return user
-
-
-def auth_header(user: User) -> dict[str, str]:
-    return {"Authorization": f"Bearer {create_access_token(user.id, user.role)}"}
+from tests.helpers import PASSWORD, auth_header, make_user
 
 
 def test_login_returns_token(client: TestClient, session: Session) -> None:
