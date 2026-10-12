@@ -14,7 +14,7 @@
 
 ## Перед открытием PR (чеклист)
 - [ ] Код работает локально, изменение запускалось руками (не только тесты).
-- [ ] `uv run ruff check . && uv run ruff format --check . && uv run pytest` — зелёное.
+- [ ] `ruff check . && ruff format --check . && pytest` (из каталога `backend/` с активным venv) — зелёное.
 - [ ] Есть тесты на новое поведение, включая ошибочные сценарии.
 - [ ] Миграция (если менялась схема): `upgrade`/`downgrade` проходят, CHECK-ограничения на месте.
 - [ ] Документация обновлена: [API.md](docs/API.md), [DOMAIN.md](docs/DOMAIN.md), [DB_SCHEMA.md](docs/DB_SCHEMA.md) — что затронуто.
