@@ -26,10 +26,10 @@
 ### Каталог — спринт 1
 | Метод | Путь | Права | Описание |
 |---|---|---|---|
-| GET | `/categories` | R | дерево или плоский список |
+| GET | `/categories`, `/categories/{id}` | R | плоский список или дерево (`?tree=true`), фильтр `is_active` |
 | POST/PATCH | `/categories`, `/categories/{id}` | W | создать/изменить |
-| POST | `/categories/{id}/archive` | W | архивировать (нельзя, если есть активные товары) |
-| GET | `/products` | R | фильтры: `q` (название/sku), `category_id`, `is_active`; пагинация |
+| POST | `/categories/{id}/archive` | W | архивировать (нельзя, если есть активные товары или подкатегории) |
+| GET | `/products`, `/products/{id}` | R | фильтры: `q` (название/sku), `category_id`, `is_active`; пагинация |
 | POST/PATCH | `/products`, `/products/{id}` | W | sku уникален, `409` при дубле |
 | POST | `/products/{id}/archive` | W | архивировать |
 | GET | `/products/{id}/stock` | R | `{on_hand, reserved, available, min_stock}` (с 2 спринта) |
