@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     test_database_url: str = "postgresql+psycopg://wms:wms@localhost:5432/wms_test"
     jwt_secret: str = "change-me"
     jwt_expire_minutes: int = 60
+    admin_email: str = "admin@example.com"
+    admin_password: str = "change-me"
 
 
 @lru_cache
