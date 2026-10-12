@@ -30,6 +30,11 @@ class Forbidden(AppError):
     code = "FORBIDDEN"
 
 
+class Unprocessable(AppError):
+    status_code = 422
+    code = "VALIDATION_ERROR"
+
+
 class Unauthorized(AppError):
     status_code = 401
     code = "UNAUTHORIZED"
