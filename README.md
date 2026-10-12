@@ -15,32 +15,33 @@
 
 | Область | Статус | Спринт |
 |---|---|---|
-| Каркас репо, Docker, CI | ⬜ | 1 |
-| Схема БД + миграции | ⬜ | 1 |
-| Auth (JWT, роли) | ⬜ | 1 |
-| Каталог: категории, товары | ⬜ | 1 |
-| Поставщики | ⬜ | 1 |
+| Каркас репо, Docker, CI | ✅ | 1 |
+| Схема БД + миграции | ✅ | 1 |
+| Auth (JWT, роли) | ✅ | 1 |
+| Каталог: категории, товары | ✅ | 1 |
+| Поставщики | ✅ | 1 |
 | Партии, приход, списание, журнал, остатки | ⬜ | 2 |
 | Резервирование | ⬜ | 3 |
 | Инвентаризация | ⬜ | 3 |
 | Автодетект нехватки | ⬜ | 4 |
-| Фронтенд (экраны) | ⬜ | 1 (каркас) → 4–5 |
+| Фронтенд (экраны) | 🟨 каркас готов, экраны позже | 1 (каркас) → 4–5 |
 | Отчёты, экспорт CSV | ⬜ | 5 |
 
 ## С чего начать чтение
 1. [docs/DOMAIN.md](docs/DOMAIN.md) — **что система делает и по каким правилам** (читать первым).
-2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — из чего состоит, как устроен код, как добавить новый модуль.
-3. [docs/DB_SCHEMA.md](docs/DB_SCHEMA.md) — таблицы, ограничения, инварианты.
-4. [docs/API.md](docs/API.md) — соглашения и список эндпоинтов.
-5. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — как запустить, тестировать, мигрировать.
-6. [CONTRIBUTING.md](CONTRIBUTING.md) — ветки, коммиты, PR, «готово, когда».
-7. [docs/ROADMAP.md](docs/ROADMAP.md) — стек, спринты, разделение работы.
+2. [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) — объём MVP и пользовательские истории.
+3. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — из чего состоит, как устроен код, как добавить новый модуль.
+4. [docs/DB_SCHEMA.md](docs/DB_SCHEMA.md) — таблицы, ограничения, инварианты ([ER-диаграмма](docs/ER_MODEL.md)).
+5. [docs/API.md](docs/API.md) — соглашения и список эндпоинтов.
+6. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — как запустить, тестировать, мигрировать.
+7. [CONTRIBUTING.md](CONTRIBUTING.md) — ветки, коммиты, PR, «готово, когда».
+8. [docs/ROADMAP.md](docs/ROADMAP.md) — стек, спринты, разделение работы.
 
 ## Стек
 Python 3.13 · FastAPI · Pydantic v2 · SQLAlchemy 2.0 · Alembic · PostgreSQL 16 · React + TypeScript + Vite ·
 Docker Compose · GitHub Actions · pytest · ruff · зависимости — `pip` + `venv` (`requirements.txt`).
 
-## Быстрый запуск (после спринта 1)
+## Быстрый запуск
 ```bash
 cp .env.example .env
 docker compose up --build      # PostgreSQL + backend, миграции применяются при старте
