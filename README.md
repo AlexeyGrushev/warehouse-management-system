@@ -38,7 +38,7 @@
 
 ## Стек
 Python 3.13 · FastAPI · Pydantic v2 · SQLAlchemy 2.0 · Alembic · PostgreSQL 16 · React + TypeScript + Vite ·
-Docker Compose · GitHub Actions · pytest · ruff · менеджер зависимостей Python — **uv**.
+Docker Compose · GitHub Actions · pytest · ruff · зависимости — `pip` + `venv` (`requirements.txt`).
 
 ## Быстрый запуск (после спринта 1)
 ```bash
