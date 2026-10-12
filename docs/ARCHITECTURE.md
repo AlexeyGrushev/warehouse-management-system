@@ -95,7 +95,7 @@ frontend/src/
 
 ## Как добавить новый модуль (чеклист)
 1. Создать `modules/<name>/` с `models.py`, `schemas.py`, `service.py`, `router.py`.
-2. Подключить модели в `db/base.py` (чтобы их видел Alembic), роутер — в `main.py` с префиксом `/api/v1/<name>`.
+2. Подключить модели в `db/models.py` (чтобы их видел Alembic), роутер — в `main.py` с префиксом `/api/v1/<name>`.
 3. Создать миграцию: `alembic revision --autogenerate -m "add <name>"`, просмотреть, дописать CHECK/индексы, проверить `upgrade` и `downgrade`.
 4. Написать тесты сервиса (основные сценарии + ошибки) и 1–2 теста API.
 5. Обновить [API.md](API.md), при изменении правил — [DOMAIN.md](DOMAIN.md), при изменении таблиц — [DB_SCHEMA.md](DB_SCHEMA.md).
