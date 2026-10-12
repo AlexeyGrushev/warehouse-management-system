@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.core.errors import register_error_handlers
 from app.modules.auth.router import router as auth_router
 from app.modules.catalog.router import router as catalog_router
+from app.modules.suppliers.router import router as suppliers_router
 
 API_PREFIX = "/api/v1"
 
@@ -17,6 +18,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(catalog_router, prefix=API_PREFIX)
+    app.include_router(suppliers_router, prefix=API_PREFIX)
     return app
 
 
