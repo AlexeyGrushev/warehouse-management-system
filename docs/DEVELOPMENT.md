@@ -18,6 +18,8 @@ pip install -r requirements-dev.txt
 Новый пакет добавляем в `requirements.txt` (для приложения) или `requirements-dev.txt` (для разработки) с зафиксированной версией.
 Дальше все команды запускаем с активным venv.
 
+Короткие команды из корня репозитория: `make install` (venv и зависимости), `make lint`, `make format`, `make test`.
+
 ## Вариант 1. Всё в Docker (проще всего)
 ```bash
 cp .env.example .env
