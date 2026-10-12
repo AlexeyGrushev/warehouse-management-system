@@ -18,7 +18,7 @@ pip install -r requirements-dev.txt
 Новый пакет добавляем в `requirements.txt` (для приложения) или `requirements-dev.txt` (для разработки) с зафиксированной версией.
 Дальше все команды запускаем с активным venv.
 
-Короткие команды из корня репозитория: `make install` (venv и зависимости), `make lint`, `make format`, `make test`.
+Короткие команды из корня репозитория: `make install` (venv и зависимости), `make lint`, `make format`, `make test`, `make db-up`, `make migrate`, `make seed`.
 
 ## Вариант 1. Всё в Docker (проще всего)
 ```bash
@@ -35,7 +35,7 @@ docker compose up -d db
 cd backend
 source .venv/bin/activate        # окружение создано выше
 alembic upgrade head
-python -m app.seed
+PYTHONPATH=src python -m app.seed   # или `make seed` из корня репозитория
 fastapi dev src/app/main.py        # автоперезагрузка, http://localhost:8000
 ```
 
