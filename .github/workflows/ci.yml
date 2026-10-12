@@ -38,5 +38,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Линтер
         run: ruff check . && ruff format --check .
+      - name: Миграции вверх и вниз
+        run: alembic upgrade head && alembic downgrade base && alembic upgrade head
       - name: Тесты
         run: pytest
