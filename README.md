@@ -36,6 +36,7 @@
 6. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — как запустить, тестировать, мигрировать.
 7. [CONTRIBUTING.md](CONTRIBUTING.md) — ветки, коммиты, PR, «готово, когда».
 8. [docs/ROADMAP.md](docs/ROADMAP.md) — стек, спринты, разделение работы.
+9. [docs/SPRINT_1.md](docs/SPRINT_1.md) — итоги спринта 1: что сделано, как запустить.
 
 ## Стек
 Python 3.13 · FastAPI · Pydantic v2 · SQLAlchemy 2.0 · Alembic · PostgreSQL 16 · React + TypeScript + Vite ·
