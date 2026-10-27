@@ -25,6 +25,11 @@ class Conflict(AppError):
     code = "CONFLICT"
 
 
+class InsufficientStock(AppError):
+    status_code = 409
+    code = "INSUFFICIENT_STOCK"
+
+
 class Forbidden(AppError):
     status_code = 403
     code = "FORBIDDEN"

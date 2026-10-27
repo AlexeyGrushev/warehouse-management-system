@@ -3,17 +3,25 @@
 На складе = SUM(quantity_delta), в резерве = SUM(reserved_delta), доступно = на складе − в резерве.
 """
 
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.errors import Conflict, NotFound, Unprocessable
+from app.core.errors import Conflict, InsufficientStock, NotFound, Unprocessable
 from app.modules.auth.models import User
 from app.modules.catalog.models import Product
 from app.modules.stock.models import Batch, StockMovement
-from app.modules.stock.schemas import ReceiptCreate, StockLevel, StockTotals
+from app.modules.stock.schemas import (
+    ReceiptCreate,
+    StockLevel,
+    StockTotals,
+    WriteOffCreate,
+    WriteOffLine,
+    WriteOffResult,
+)
 from app.modules.suppliers.models import Supplier
 
 ZERO = Decimal("0")
@@ -103,3 +111,70 @@ def receive(session: Session, user: User, data: ReceiptCreate) -> Batch:
     )
     session.flush()
     return batch
+
+
+def _batches_fefo(
+    session: Session, product_id: int, today: date, skip_expired: bool
+) -> list[Batch]:
+    """Партии с остатком в порядке FEFO: срок годности (NULL в конце), дата прихода, id."""
+    query = (
+        select(Batch)
+        .where(Batch.product_id == product_id, Batch.qty_remaining > 0)
+        .order_by(Batch.expires_at.asc().nulls_last(), Batch.received_at, Batch.id)
+    )
+    if skip_expired:
+        query = query.where(Batch.expires_at.is_(None) | (Batch.expires_at >= today))
+    return list(session.scalars(query))
+
+
+def write_off(
+    session: Session, user: User, data: WriteOffCreate, today: date | None = None
+) -> WriteOffResult:
+    """Списание по FEFO: из каждой затронутой партии отдельная запись WRITE_OFF.
+
+    Продажа (SALE) пропускает просроченные партии и проверяет остаток только по непросроченным;
+    для остальных причин берутся все партии. Операция выполняется целиком или не выполняется.
+    """
+    today = today or date.today()
+    product = lock_product(session, data.product_id)
+    _require_whole_for_pieces(product, data.quantity)
+
+    skip_expired = data.reason == "SALE"
+    batches = _batches_fefo(session, product.id, today, skip_expired)
+    reserved = get_totals(session, product.id).reserved
+    available = sum((batch.qty_remaining for batch in batches), ZERO) - reserved
+    if data.quantity > available:
+        shown = max(available, ZERO)
+        raise InsufficientStock(
+            f"Запрошено {data.quantity:.3f}, доступно {shown:.3f}",
+            {
+                "product_id": str(product.id),
+                "requested": f"{data.quantity:.3f}",
+                "available": f"{shown:.3f}",
+            },
+        )
+
+    need = data.quantity
+    lines: list[WriteOffLine] = []
+    for batch in batches:
+        if need <= 0:
+            break
+        take = min(batch.qty_remaining, need)
+        batch.qty_remaining -= take
+        session.add(
+            StockMovement(
+                type="WRITE_OFF",
+                product_id=product.id,
+                batch_id=batch.id,
+                quantity_delta=-take,
+                reason=data.reason,
+                user_id=user.id,
+                comment=data.comment,
+            )
+        )
+        lines.append(WriteOffLine(batch_id=batch.id, batch_no=batch.batch_no, quantity=take))
+        need -= take
+    session.flush()
+    return WriteOffResult(
+        product_id=product.id, reason=data.reason, quantity=data.quantity, lines=lines
+    )

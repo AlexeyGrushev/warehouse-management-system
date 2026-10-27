@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
@@ -58,3 +58,28 @@ class BatchRead(BaseModel):
     unit_cost: MoneyOut
     received_at: date
     expires_at: date | None
+
+
+WriteOffReason = Literal["SALE", "DAMAGE", "EXPIRED", "OTHER"]
+
+
+class WriteOffCreate(BaseModel):
+    product_id: int
+    quantity: PositiveQuantity
+    reason: WriteOffReason
+    comment: Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None = None
+
+
+class WriteOffLine(BaseModel):
+    """Сколько списано из одной партии."""
+
+    batch_id: int
+    batch_no: str
+    quantity: QuantityOut
+
+
+class WriteOffResult(BaseModel):
+    product_id: int
+    reason: WriteOffReason
+    quantity: QuantityOut
+    lines: list[WriteOffLine]
