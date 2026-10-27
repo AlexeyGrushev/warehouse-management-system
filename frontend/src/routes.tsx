@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
+import { MovementsPage } from './features/movements/MovementsPage'
 import { ProductsPage } from './features/products/ProductsPage'
 import { StockPage } from './features/stock/StockPage'
 
@@ -14,6 +15,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/stock" element={<StockPage />} />
+          <Route path="/movements" element={<MovementsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/products" replace />} />

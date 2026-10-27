@@ -78,3 +78,22 @@ export interface ReceiptInput {
   received_at: string
   expires_at: string | null
 }
+
+export type MovementType = 'RECEIPT' | 'WRITE_OFF' | 'RESERVE' | 'RELEASE' | 'ADJUSTMENT'
+
+export interface Movement {
+  id: number
+  type: MovementType
+  product_id: number
+  product_sku: string
+  product_name: string
+  batch_id: number | null
+  batch_no: string | null
+  quantity_delta: string
+  reserved_delta: string
+  reason: string | null
+  comment: string | null
+  user_id: number
+  user_email: string
+  created_at: string
+}
