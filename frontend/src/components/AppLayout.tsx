@@ -1,4 +1,4 @@
-import { LogoutOutlined, ShoppingOutlined } from '@ant-design/icons'
+import { DatabaseOutlined, LogoutOutlined, ShoppingOutlined } from '@ant-design/icons'
 import { Button, Layout, Menu, Space, Tag, Typography } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
@@ -10,7 +10,10 @@ const ROLE_LABELS = {
   viewer: 'наблюдатель',
 } as const
 
-const MENU_ITEMS = [{ key: '/products', icon: <ShoppingOutlined />, label: 'Товары' }]
+const MENU_ITEMS = [
+  { key: '/products', icon: <ShoppingOutlined />, label: 'Товары' },
+  { key: '/stock', icon: <DatabaseOutlined />, label: 'Остатки' },
+]
 
 export function AppLayout() {
   const { user, logout } = useAuth()
