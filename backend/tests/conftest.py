@@ -5,8 +5,8 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
 from app.db.session import get_session
@@ -43,3 +43,16 @@ def client(session: Session) -> Iterator[TestClient]:
     app.dependency_overrides[get_session] = lambda: session
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def committed(engine: Engine) -> Iterator[sessionmaker[Session]]:
+    """Для тестов на параллельность: сессии с настоящими коммитами, данные чистятся после теста."""
+    yield sessionmaker(bind=engine, expire_on_commit=False)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "TRUNCATE stock_movements, batches, products, categories, suppliers, users "
+                "RESTART IDENTITY CASCADE"
+            )
+        )
