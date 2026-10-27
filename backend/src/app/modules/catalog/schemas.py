@@ -1,21 +1,13 @@
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    PlainSerializer,
-    StringConstraints,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
+
+from app.core.types import Quantity, QuantityOut
 
 Unit = Literal["pcs", "kg", "l", "m", "box"]
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Sku = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
-Quantity = Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=3)]
-# В ответах количества отдаём строкой с тремя знаками, чтобы не терять точность
-QuantityOut = Annotated[Decimal, PlainSerializer(lambda value: f"{value:.3f}", return_type=str)]
 
 
 class CategoryCreate(BaseModel):
