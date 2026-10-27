@@ -31,3 +31,10 @@ def paginate(session: Session, query: Select, params: PageParams) -> tuple[list,
     total = session.scalar(select(func.count()).select_from(query.order_by(None).subquery()))
     rows = session.scalars(query.limit(params.size).offset((params.page - 1) * params.size)).all()
     return list(rows), total or 0
+
+
+def paginate_rows(session: Session, query: Select, params: PageParams) -> tuple[list, int]:
+    """То же, что paginate, но для запросов с несколькими колонками (возвращает строки)."""
+    total = session.scalar(select(func.count()).select_from(query.order_by(None).subquery()))
+    rows = session.execute(query.limit(params.size).offset((params.page - 1) * params.size)).all()
+    return list(rows), total or 0

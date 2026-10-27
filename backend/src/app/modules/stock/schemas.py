@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -83,3 +83,40 @@ class WriteOffResult(BaseModel):
     reason: WriteOffReason
     quantity: QuantityOut
     lines: list[WriteOffLine]
+
+
+class BatchDetail(BatchRead):
+    """Партия с названиями товара и поставщика (для таблиц без доп. запросов)."""
+
+    product_sku: str
+    product_name: str
+    supplier_name: str | None
+
+
+class MovementRead(BaseModel):
+    id: int
+    type: str
+    product_id: int
+    product_sku: str
+    product_name: str
+    batch_id: int | None
+    batch_no: str | None
+    quantity_delta: QuantityOut
+    reserved_delta: QuantityOut
+    reason: str | None
+    comment: str | None
+    user_id: int
+    user_email: str
+    created_at: datetime
+
+
+class StockRow(BaseModel):
+    product_id: int
+    sku: str
+    name: str
+    unit: str
+    on_hand: QuantityOut
+    reserved: QuantityOut
+    available: QuantityOut
+    min_stock: QuantityOut
+    is_low: bool
