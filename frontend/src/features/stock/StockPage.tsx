@@ -1,11 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { Alert, Input, Space, Switch, Table, Tag, Typography } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { Alert, Button, Input, Space, Switch, Table, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 
 import { fetchStock } from '../../api/stock'
 import type { StockRow } from '../../api/types'
 import { UNIT_LABELS, formatQuantity } from '../../shared'
+import { useAuth } from '../auth/auth-state'
+import { ReceiptModal } from './ReceiptModal'
 
 const PAGE_SIZE = 20
 
@@ -13,6 +16,9 @@ export function StockPage() {
   const [search, setSearch] = useState('')
   const [lowOnly, setLowOnly] = useState(false)
   const [page, setPage] = useState(1)
+  const [receiptOpen, setReceiptOpen] = useState(false)
+  const { user } = useAuth()
+  const canWrite = user !== null && user.role !== 'viewer'
 
   const stock = useQuery({
     queryKey: ['stock', search, lowOnly, page],
@@ -52,9 +58,16 @@ export function StockPage() {
 
   return (
     <>
-      <Typography.Title level={3} style={{ marginTop: 0 }}>
-        Остатки
-      </Typography.Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography.Title level={3} style={{ marginTop: 0 }}>
+          Остатки
+        </Typography.Title>
+        {canWrite && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setReceiptOpen(true)}>
+            Принять партию
+          </Button>
+        )}
+      </div>
       <Space wrap size="large" style={{ marginBottom: 16 }}>
         <Input.Search
           allowClear
@@ -93,6 +106,7 @@ export function StockPage() {
         }}
         locale={{ emptyText: 'Товары не найдены' }}
       />
+      <ReceiptModal open={receiptOpen} onClose={() => setReceiptOpen(false)} />
     </>
   )
 }
