@@ -35,6 +35,20 @@ def lock_product(session: Session, product_id: int) -> Product:
     return product
 
 
+def lock_products(session: Session, product_ids: list[int]) -> list[Product]:
+    """Блокирует несколько товаров, строго по возрастанию id (иначе возможны взаимоблокировки)."""
+    ids = sorted(set(product_ids))
+    products = list(
+        session.scalars(
+            select(Product).where(Product.id.in_(ids)).order_by(Product.id).with_for_update()
+        )
+    )
+    missing = set(ids) - {product.id for product in products}
+    if missing:
+        raise NotFound("Товар не найден", {"product_id": str(min(missing))})
+    return products
+
+
 def get_totals(session: Session, product_id: int) -> StockTotals:
     on_hand, reserved = session.execute(
         select(
