@@ -97,3 +97,27 @@ export interface Movement {
   user_email: string
   created_at: string
 }
+
+export type WriteOffReason = 'SALE' | 'DAMAGE' | 'EXPIRED' | 'OTHER'
+
+export interface WriteOffInput {
+  product_id: number
+  quantity: string
+  reason: WriteOffReason
+  comment: string | null
+}
+
+export interface WriteOffResult {
+  product_id: number
+  reason: WriteOffReason
+  quantity: string
+  lines: { batch_id: number; batch_no: string; quantity: string }[]
+}
+
+export interface StockLevel {
+  product_id: number
+  on_hand: string
+  reserved: string
+  available: string
+  min_stock: string | null
+}

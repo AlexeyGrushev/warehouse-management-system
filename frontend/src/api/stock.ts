@@ -1,5 +1,15 @@
 import { apiFetch } from './client'
-import type { Batch, Movement, MovementType, Page, ReceiptInput, StockRow } from './types'
+import type {
+  Batch,
+  Movement,
+  MovementType,
+  Page,
+  ReceiptInput,
+  StockLevel,
+  StockRow,
+  WriteOffInput,
+  WriteOffResult,
+} from './types'
 
 export interface StockFilters {
   q?: string
@@ -47,4 +57,12 @@ export function fetchMovements(filters: MovementFilters): Promise<Page<Movement>
     params.set('date_to', filters.dateTo)
   }
   return apiFetch<Page<Movement>>(`/movements?${params}`)
+}
+
+export function createWriteOff(data: WriteOffInput): Promise<WriteOffResult> {
+  return apiFetch<WriteOffResult>('/write-offs', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function fetchProductStock(productId: number): Promise<StockLevel> {
+  return apiFetch<StockLevel>(`/products/${productId}/stock`)
 }
