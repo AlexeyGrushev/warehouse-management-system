@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { PlusOutlined } from '@ant-design/icons'
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import { Alert, Button, Input, Space, Switch, Table, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
@@ -9,6 +9,8 @@ import type { StockRow } from '../../api/types'
 import { UNIT_LABELS, formatQuantity } from '../../shared'
 import { useAuth } from '../auth/auth-state'
 import { ReceiptModal } from './ReceiptModal'
+import { WriteOffModal } from './WriteOffModal'
+import type { WriteOffPreset } from './WriteOffModal'
 
 const PAGE_SIZE = 20
 
@@ -17,6 +19,8 @@ export function StockPage() {
   const [lowOnly, setLowOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  const [writeOffOpen, setWriteOffOpen] = useState(false)
+  const [writeOffPreset, setWriteOffPreset] = useState<WriteOffPreset | null>(null)
   const { user } = useAuth()
   const canWrite = user !== null && user.role !== 'viewer'
 
@@ -56,6 +60,25 @@ export function StockPage() {
     },
   ]
 
+  if (canWrite) {
+    columns.push({
+      title: '',
+      width: 110,
+      render: (_, row) => (
+        <Button
+          size="small"
+          icon={<MinusCircleOutlined />}
+          onClick={() => {
+            setWriteOffPreset({ id: row.product_id, label: `${row.sku} · ${row.name}`, unit: row.unit })
+            setWriteOffOpen(true)
+          }}
+        >
+          Списать
+        </Button>
+      ),
+    })
+  }
+
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -63,9 +86,21 @@ export function StockPage() {
           Остатки
         </Typography.Title>
         {canWrite && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setReceiptOpen(true)}>
-            Принять партию
-          </Button>
+          <Space>
+            <Button
+              danger
+              icon={<MinusCircleOutlined />}
+              onClick={() => {
+                setWriteOffPreset(null)
+                setWriteOffOpen(true)
+              }}
+            >
+              Списать
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setReceiptOpen(true)}>
+              Принять партию
+            </Button>
+          </Space>
         )}
       </div>
       <Space wrap size="large" style={{ marginBottom: 16 }}>
@@ -107,6 +142,11 @@ export function StockPage() {
         locale={{ emptyText: 'Товары не найдены' }}
       />
       <ReceiptModal open={receiptOpen} onClose={() => setReceiptOpen(false)} />
+      <WriteOffModal
+        open={writeOffOpen}
+        preset={writeOffPreset}
+        onClose={() => setWriteOffOpen(false)}
+      />
     </>
   )
 }
