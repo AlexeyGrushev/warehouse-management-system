@@ -40,6 +40,19 @@ class Product(IdMixin, CreatedAtMixin, Base):
         CheckConstraint("unit IN ('pcs', 'kg', 'l', 'm', 'box')", name="unit"),
         CheckConstraint("min_stock >= 0", name="min_stock"),
         CheckConstraint("target_stock IS NULL OR target_stock >= min_stock", name="target_stock"),
+        # Триграммные индексы для поиска по подстроке (создаются миграцией)
+        Index(
+            "ix_products_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_products_sku_trgm",
+            "sku",
+            postgresql_using="gin",
+            postgresql_ops={"sku": "gin_trgm_ops"},
+        ),
     )
 
     sku: Mapped[str] = mapped_column(Text, unique=True)
