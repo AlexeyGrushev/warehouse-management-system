@@ -8,7 +8,13 @@ from app.modules.auth.deps import require_role
 from app.modules.auth.models import User
 from app.modules.stock import service
 from app.modules.stock.models import Batch
-from app.modules.stock.schemas import BatchRead, ReceiptCreate, StockLevel
+from app.modules.stock.schemas import (
+    BatchRead,
+    ReceiptCreate,
+    StockLevel,
+    WriteOffCreate,
+    WriteOffResult,
+)
 
 router = APIRouter(tags=["stock"])
 
@@ -25,3 +31,8 @@ def read_product_stock(product_id: int, session: DbSession, _: Reader) -> StockL
 @router.post("/receipts", response_model=BatchRead, status_code=status.HTTP_201_CREATED)
 def create_receipt(data: ReceiptCreate, session: DbSession, user: Writer) -> Batch:
     return service.receive(session, user, data)
+
+
+@router.post("/write-offs", response_model=WriteOffResult, status_code=status.HTTP_201_CREATED)
+def create_write_off(data: WriteOffCreate, session: DbSession, user: Writer) -> WriteOffResult:
+    return service.write_off(session, user, data)
