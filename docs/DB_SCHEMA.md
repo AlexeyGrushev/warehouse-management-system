@@ -129,6 +129,8 @@ erDiagram
 | target_stock | numeric(14,3) | NULL, CHECK (target_stock IS NULL OR target_stock >= min_stock) |
 | is_active | bool | NOT NULL DEFAULT true |
 
+Индексы поиска: GIN-индексы `gin_trgm_ops` по `name` и `sku` (расширение `pg_trgm`, миграция «trigram indexes for product search») ускоряют поиск по подстроке (`ILIKE '%...%'`) в `GET /products` и `GET /stock`.
+
 ### suppliers
 `name` NOT NULL UNIQUE, `contact` (телефон/почта, свободный текст), `is_active`.
 
@@ -183,6 +185,7 @@ Append-only: в коде нет UPDATE/DELETE; опционально тригг
 
 ## Инварианты (на них написать тесты)
 1. Для каждого товара: `SUM(batches.qty_remaining) = SUM(stock_movements.quantity_delta)`.
+   Проверка реализована в `modules/stock/integrity.py` (`find_violations`) и вызывается в тестах после seed, сценариев прихода/списания и операций через API.
 2. Для каждой партии: `qty_remaining = SUM(quantity_delta)` по движениям этой партии.
 3. `reserved ≥ 0` и `reserved = SUM(reservation_items.quantity) по ACTIVE-резервам` этого товара.
 4. `available = on_hand − reserved` может быть `< 0` только после инвентаризационной корректировки (см. DOMAIN, п. 4).

@@ -31,24 +31,24 @@
 | POST | `/categories/{id}/archive` | W | архивировать (нельзя, если есть активные товары или подкатегории) |
 | GET | `/products`, `/products/{id}` | R | фильтры: `q` (название/sku), `category_id`, `is_active`; пагинация |
 | POST/PATCH | `/products`, `/products/{id}` | W | sku уникален, `409` при дубле |
-| POST | `/products/{id}/archive` | W | архивировать |
-| GET | `/products/{id}/stock` | R | `{on_hand, reserved, available, min_stock}` (с 2 спринта) |
+| POST | `/products/{id}/archive` | W | архивировать (нельзя, пока есть остаток или активный резерв: `409`) |
+| GET | `/products/{id}/stock` | R | `{product_id, on_hand, reserved, available, min_stock}` — считается из журнала движений |
 
 ### Поставщики — спринт 1
 | Метод | Путь | Права | Описание |
 |---|---|---|---|
 | GET | `/suppliers` | R | поиск `q`, пагинация |
 | POST/PATCH | `/suppliers`, `/suppliers/{id}` | W | |
-| POST | `/suppliers/{id}/archive` | W | нельзя, если есть партии с остатком |
+| POST | `/suppliers/{id}/archive` | W | нельзя, если есть партии с остатком (`409`) |
 
 ### Партии и движения — спринт 2
 | Метод | Путь | Права | Описание |
 |---|---|---|---|
-| POST | `/receipts` | W | приход: `{product_id, supplier_id, batch_no, quantity, unit_cost, received_at, expires_at?}` |
-| POST | `/write-offs` | W | списание: `{product_id, quantity, reason, comment?}` (FEFO) |
-| GET | `/batches` | R | фильтры: `product_id`, `supplier_id`, `only_in_stock` |
-| GET | `/movements` | R | журнал: `product_id`, `type`, `date_from`, `date_to`, `user_id`; пагинация |
-| GET | `/stock` | R | остатки по всем товарам: `on_hand, reserved, available` |
+| POST | `/receipts` | W | приход: `{product_id, supplier_id, batch_no, quantity, unit_cost, received_at, expires_at?}` → `201` и созданная партия. Ошибки: `404` (товар или поставщик), `409` (архив, номер партии уже есть у товара), `422` (количество `<= 0`, дробное для штучного товара, срок годности раньше даты прихода) |
+| POST | `/write-offs` | W | списание по FEFO: `{product_id, quantity, reason, comment?}`, причина — `SALE`, `DAMAGE`, `EXPIRED`, `OTHER`. `201` и `{product_id, reason, quantity, lines:[{batch_id, batch_no, quantity}]}` — сколько списано из каждой партии. Ошибки: `409 INSUFFICIENT_STOCK` (в `meta`: `requested`, `available`), `404`, `422` |
+| GET | `/batches` | R | фильтры: `product_id`, `supplier_id`, `only_in_stock`; пагинация; в ответе названия товара и поставщика |
+| GET | `/movements` | R | журнал, новые сверху: `product_id`, `type`, `date_from`, `date_to` (включительно, сутки по московскому времени), `user_id`; пагинация; в ответе артикул, название товара, номер партии, email пользователя |
+| GET | `/stock` | R | остатки по товарам: `on_hand`, `reserved`, `available`, `min_stock`, `is_low`; фильтры `q`, `category_id`, `low_only`, `is_active` (по умолчанию `true`); пагинация |
 
 ### Резервы — спринт 3
 | Метод | Путь | Права | Описание |
