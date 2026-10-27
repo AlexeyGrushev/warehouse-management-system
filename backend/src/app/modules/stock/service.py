@@ -59,6 +59,24 @@ def get_totals(session: Session, product_id: int) -> StockTotals:
     return StockTotals(on_hand=on_hand, reserved=reserved)
 
 
+def product_has_stock(session: Session, product_id: int) -> bool:
+    """Есть ли у товара остаток на складе или активный резерв."""
+    totals = get_totals(session, product_id)
+    return totals.on_hand > 0 or totals.reserved > 0
+
+
+def supplier_has_stock(session: Session, supplier_id: int) -> bool:
+    """Есть ли партии этого поставщика с остатком."""
+    return (
+        session.scalar(
+            select(Batch.id)
+            .where(Batch.supplier_id == supplier_id, Batch.qty_remaining > 0)
+            .limit(1)
+        )
+        is not None
+    )
+
+
 def get_stock(session: Session, product_id: int) -> StockLevel:
     product = session.get(Product, product_id)
     if product is None:

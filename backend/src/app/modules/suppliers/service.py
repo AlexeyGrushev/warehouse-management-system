@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import Conflict, NotFound, Unprocessable
 from app.core.pagination import PageParams, paginate
-from app.modules.stock.models import Batch
+from app.modules.stock import service as stock_service
 from app.modules.suppliers.models import Supplier
 from app.modules.suppliers.schemas import SupplierCreate, SupplierUpdate
 
@@ -64,10 +64,7 @@ def update_supplier(session: Session, supplier_id: int, data: SupplierUpdate) ->
 
 def archive_supplier(session: Session, supplier_id: int) -> None:
     supplier = get_supplier(session, supplier_id)
-    has_stock = session.scalar(
-        select(Batch.id).where(Batch.supplier_id == supplier_id, Batch.qty_remaining > 0).limit(1)
-    )
-    if has_stock is not None:
+    if stock_service.supplier_has_stock(session, supplier_id):
         raise Conflict("У поставщика есть партии с остатком")
     supplier.is_active = False
     session.flush()
