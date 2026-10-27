@@ -15,7 +15,8 @@ from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.auth.models import User
 from app.modules.catalog.models import Category, Product
-from app.modules.stock.models import Batch, StockMovement
+from app.modules.stock import service as stock_service
+from app.modules.stock.schemas import ReceiptCreate, WriteOffCreate
 from app.modules.suppliers.models import Supplier
 
 SUPPLIERS = [
@@ -134,44 +135,20 @@ def _receive(
     quantity: Decimal,
     received_at: date,
     shelf_life_days: int | None,
-    sold: Decimal,
 ) -> None:
-    """Приход партии (RECEIPT) и, если нужно, частичная продажа из неё (WRITE_OFF)."""
-    batch = Batch(
-        product_id=product.id,
-        supplier_id=supplier.id,
-        batch_no=f"{received_at:%Y%m%d}-{number}",
-        qty_received=quantity,
-        qty_remaining=quantity - sold,
-        unit_cost=Decimal(10 + (product.id * 7) % 90),
-        received_at=received_at,
-        expires_at=received_at + timedelta(days=shelf_life_days) if shelf_life_days else None,
-    )
-    session.add(batch)
-    session.flush()
-    session.add(
-        StockMovement(
-            type="RECEIPT",
+    stock_service.receive(
+        session,
+        admin,
+        ReceiptCreate(
             product_id=product.id,
-            batch_id=batch.id,
-            quantity_delta=quantity,
-            user_id=admin.id,
-            comment="Начальный приход (seed)",
-        )
+            supplier_id=supplier.id,
+            batch_no=f"{received_at:%Y%m%d}-{number}",
+            quantity=quantity,
+            unit_cost=Decimal(10 + (product.id * 7) % 90),
+            received_at=received_at,
+            expires_at=received_at + timedelta(days=shelf_life_days) if shelf_life_days else None,
+        ),
     )
-    if sold > 0:
-        session.add(
-            StockMovement(
-                type="WRITE_OFF",
-                product_id=product.id,
-                batch_id=batch.id,
-                quantity_delta=-sold,
-                reason="SALE",
-                user_id=admin.id,
-                comment="Продажа (seed)",
-            )
-        )
-    session.flush()
 
 
 def _seed_products(
@@ -180,6 +157,7 @@ def _seed_products(
     categories: dict[str, Category],
     suppliers: list[Supplier],
 ) -> None:
+    """Товары и остатки. Приходы и продажи идут через сервис остатков, как в обычной работе."""
     today = date.today()
     for index, row in enumerate(PRODUCTS):
         sku, name, category_name, unit, min_stock, target, supplier_index, shelf_life = row
@@ -199,31 +177,26 @@ def _seed_products(
         total = (Decimal(min_stock) * STOCK_FACTORS[index % len(STOCK_FACTORS)]).quantize(
             Decimal("1")
         )
-        first_part = (total / 2).quantize(Decimal("1"))
-        second_part = total - first_part
+        first_part = max((total / 2).quantize(Decimal("1")), Decimal(1))
+        second_part = max(total - first_part, Decimal(1))
         supplier = suppliers[supplier_index]
-        # Старая партия: часть уже продана. Свежая партия принята недавно.
+
+        # Старая партия: часть уже продана (продажа «в тот день», пока партия была свежей)
+        old_day = today - timedelta(days=12)
+        _receive(session, admin, product, supplier, 1, first_part, old_day, shelf_life)
+        sold = min((first_part / 3).quantize(Decimal("1")), first_part)
+        if sold > 0:
+            stock_service.write_off(
+                session,
+                admin,
+                WriteOffCreate(
+                    product_id=product.id, quantity=sold, reason="SALE", comment="Продажа (seed)"
+                ),
+                today=old_day + timedelta(days=1),
+            )
+        # Свежая партия принята недавно
         _receive(
-            session,
-            admin,
-            product,
-            supplier,
-            1,
-            first_part,
-            today - timedelta(days=12),
-            shelf_life,
-            sold=(first_part / 3).quantize(Decimal("1")),
-        )
-        _receive(
-            session,
-            admin,
-            product,
-            supplier,
-            2,
-            second_part,
-            today - timedelta(days=3),
-            shelf_life,
-            sold=Decimal(0),
+            session, admin, product, supplier, 2, second_part, today - timedelta(days=3), shelf_life
         )
 
 
