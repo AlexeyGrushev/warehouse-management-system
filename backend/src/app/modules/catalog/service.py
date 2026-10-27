@@ -13,6 +13,7 @@ from app.modules.catalog.schemas import (
     ProductUpdate,
     check_stock_levels,
 )
+from app.modules.stock import service as stock_service
 
 # ---------------------------------------------------------------- категории
 
@@ -193,5 +194,7 @@ def update_product(session: Session, product_id: int, data: ProductUpdate) -> Pr
 
 def archive_product(session: Session, product_id: int) -> None:
     product = get_product(session, product_id)
+    if stock_service.product_has_stock(session, product_id):
+        raise Conflict("У товара есть остаток на складе или активный резерв")
     product.is_active = False
     session.flush()
