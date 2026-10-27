@@ -5,16 +5,10 @@ import { useMemo, useState } from 'react'
 
 import { fetchCategories, fetchProducts } from '../../api/catalog'
 import type { Product } from '../../api/types'
+import { UNIT_LABELS } from '../../shared'
 
 const PAGE_SIZE = 20
 
-const UNIT_LABELS: Record<string, string> = {
-  pcs: 'шт',
-  kg: 'кг',
-  l: 'л',
-  m: 'м',
-  box: 'упак',
-}
 
 export function ProductsPage() {
   const [search, setSearch] = useState('')

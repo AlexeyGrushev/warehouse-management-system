@@ -37,3 +37,15 @@ export interface Product {
   target_stock: string | null
   is_active: boolean
 }
+
+export interface StockRow {
+  product_id: number
+  sku: string
+  name: string
+  unit: string
+  on_hand: string
+  reserved: string
+  available: string
+  min_stock: string
+  is_low: boolean
+}
