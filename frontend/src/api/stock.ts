@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Page, StockRow } from './types'
+import type { Batch, Page, ReceiptInput, StockRow } from './types'
 
 export interface StockFilters {
   q?: string
@@ -17,4 +17,8 @@ export function fetchStock({ q, lowOnly, page, size }: StockFilters): Promise<Pa
     params.set('low_only', 'true')
   }
   return apiFetch<Page<StockRow>>(`/stock?${params}`)
+}
+
+export function createReceipt(data: ReceiptInput): Promise<Batch> {
+  return apiFetch<Batch>('/receipts', { method: 'POST', body: JSON.stringify(data) })
 }

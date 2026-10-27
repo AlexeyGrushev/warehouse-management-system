@@ -3,14 +3,18 @@ import type { Category, Page, Product } from './types'
 
 export interface ProductFilters {
   q?: string
+  isActive?: boolean
   page: number
   size: number
 }
 
-export function fetchProducts({ q, page, size }: ProductFilters): Promise<Page<Product>> {
+export function fetchProducts({ q, isActive, page, size }: ProductFilters): Promise<Page<Product>> {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
   if (q) {
     params.set('q', q)
+  }
+  if (isActive !== undefined) {
+    params.set('is_active', String(isActive))
   }
   return apiFetch<Page<Product>>(`/products?${params}`)
 }
