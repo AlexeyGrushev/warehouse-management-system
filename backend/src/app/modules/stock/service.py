@@ -293,3 +293,91 @@ def release(
     session.add(movement)
     session.flush()
     return movement
+
+
+def adjust_down(
+    session: Session,
+    user: User,
+    product_id: int,
+    quantity: Decimal,
+    inventory_session_id: int,
+    today: date | None = None,
+) -> list[StockMovement]:
+    """Недостача по инвентаризации: списывает по FEFO из всех партий (и просроченных тоже).
+
+    По одному движению ADJUSTMENT с отрицательным знаком на каждую затронутую партию.
+    """
+    today = today or date.today()
+    batches = _batches_fefo(session, product_id, today, skip_expired=False)
+    available = sum((batch.qty_remaining for batch in batches), ZERO)
+    if quantity > available:
+        raise InsufficientStock(
+            "Недостача больше остатка в партиях: остатки не сходятся с журналом",
+            {"product_id": str(product_id), "requested": f"{quantity:.3f}"},
+        )
+    movements: list[StockMovement] = []
+    need = quantity
+    for batch in batches:
+        if need <= 0:
+            break
+        take = min(batch.qty_remaining, need)
+        batch.qty_remaining -= take
+        movement = StockMovement(
+            type="ADJUSTMENT",
+            product_id=product_id,
+            batch_id=batch.id,
+            quantity_delta=-take,
+            inventory_session_id=inventory_session_id,
+            user_id=user.id,
+            comment="Недостача по инвентаризации",
+        )
+        session.add(movement)
+        movements.append(movement)
+        need -= take
+    session.flush()
+    return movements
+
+
+def adjust_up(
+    session: Session,
+    user: User,
+    product_id: int,
+    quantity: Decimal,
+    inventory_session_id: int,
+    today: date | None = None,
+) -> StockMovement:
+    """Излишек по инвентаризации: корректирующая партия INV-<id сессии> и движение ADJUSTMENT.
+
+    Цена — последняя закупочная цена товара (или 0, если партий ещё не было).
+    """
+    today = today or date.today()
+    last_cost = session.scalar(
+        select(Batch.unit_cost)
+        .where(Batch.product_id == product_id)
+        .order_by(Batch.received_at.desc(), Batch.id.desc())
+        .limit(1)
+    )
+    batch = Batch(
+        product_id=product_id,
+        supplier_id=None,
+        batch_no=f"INV-{inventory_session_id}",
+        qty_received=quantity,
+        qty_remaining=quantity,
+        unit_cost=last_cost if last_cost is not None else ZERO,
+        received_at=today,
+        expires_at=None,
+    )
+    session.add(batch)
+    session.flush()
+    movement = StockMovement(
+        type="ADJUSTMENT",
+        product_id=product_id,
+        batch_id=batch.id,
+        quantity_delta=quantity,
+        inventory_session_id=inventory_session_id,
+        user_id=user.id,
+        comment="Излишек по инвентаризации",
+    )
+    session.add(movement)
+    session.flush()
+    return movement

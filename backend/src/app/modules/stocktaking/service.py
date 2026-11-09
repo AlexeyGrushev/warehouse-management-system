@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -162,4 +163,70 @@ def cancel_session(
     inventory.status = "CANCELLED"
     inventory.closed_at = now
     session.flush()
+    return get_session_or_404(session, session_id)
+
+
+def set_counted(
+    session: Session, session_id: int, product_id: int, counted_qty: Decimal
+) -> InventorySession:
+    """Ввод «насчитали» по строке; можно вводить частями и исправлять, пока сессия идёт."""
+    inventory = _lock_session(session, session_id)
+    if inventory.status != "IN_PROGRESS":
+        raise Conflict(
+            "Вводить остатки можно только в идущей инвентаризации",
+            {"inventory_session_id": str(session_id), "status": inventory.status},
+        )
+    line = session.scalar(
+        select(InventoryLine).where(
+            InventoryLine.session_id == session_id, InventoryLine.product_id == product_id
+        )
+    )
+    if line is None:
+        raise NotFound(
+            "Товара нет в этой инвентаризации",
+            {"inventory_session_id": str(session_id), "product_id": str(product_id)},
+        )
+    product = session.get(Product, product_id)
+    stock_service.require_whole_for_pieces(product, counted_qty)
+    line.counted_qty = counted_qty
+    session.flush()
+    return get_session_or_404(session, session_id)
+
+
+def close_session(
+    session: Session, user: User, session_id: int, now: datetime | None = None
+) -> InventorySession:
+    """Закрытие: расхождения превращаются в движения ADJUSTMENT, резервы не трогаем."""
+    now = now or datetime.now(UTC)
+    inventory = _lock_session(session, session_id)
+    if inventory.status != "IN_PROGRESS":
+        raise Conflict(
+            "Закрыть можно только идущую инвентаризацию",
+            {"inventory_session_id": str(session_id), "status": inventory.status},
+        )
+    lines = list(
+        session.scalars(
+            select(InventoryLine)
+            .where(InventoryLine.session_id == session_id)
+            .order_by(InventoryLine.product_id)
+        )
+    )
+    missing = [line.product_id for line in lines if line.counted_qty is None]
+    if missing:
+        raise Unprocessable(
+            f"Заполнены не все строки: не хватает {len(missing)}",
+            {"missing": str(len(missing)), "first_product_id": str(missing[0])},
+        )
+    stock_service.lock_products(session, [line.product_id for line in lines])
+    # Все корректировки или никаких: при сбое откатывается всё закрытие
+    with session.begin_nested():
+        for line in lines:
+            diff = line.counted_qty - line.expected_qty
+            if diff < 0:
+                stock_service.adjust_down(session, user, line.product_id, -diff, session_id)
+            elif diff > 0:
+                stock_service.adjust_up(session, user, line.product_id, diff, session_id)
+        inventory.status = "CLOSED"
+        inventory.closed_at = now
+        session.flush()
     return get_session_or_404(session, session_id)

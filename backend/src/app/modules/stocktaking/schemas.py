@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.core.types import QuantityOut
+from app.core.types import Quantity, QuantityOut
 
 
 class StocktakingCreate(BaseModel):
@@ -32,3 +32,7 @@ class StocktakingSummary(BaseModel):
 
 class StocktakingDetail(StocktakingSummary):
     lines: list[LineRead]
+
+
+class CountedQuantity(BaseModel):
+    counted_qty: Quantity

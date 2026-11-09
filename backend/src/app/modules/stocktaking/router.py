@@ -8,7 +8,12 @@ from app.db.session import get_session
 from app.modules.auth.deps import require_role
 from app.modules.auth.models import User
 from app.modules.stocktaking import service
-from app.modules.stocktaking.schemas import StocktakingCreate, StocktakingDetail, StocktakingSummary
+from app.modules.stocktaking.schemas import (
+    CountedQuantity,
+    StocktakingCreate,
+    StocktakingDetail,
+    StocktakingSummary,
+)
 
 router = APIRouter(tags=["stocktaking"])
 
@@ -51,3 +56,16 @@ def start_stocktaking(session_id: int, session: DbSession, _: Writer) -> Stockta
 @router.post("/stocktakings/{session_id}/cancel", response_model=StocktakingDetail)
 def cancel_stocktaking(session_id: int, session: DbSession, _: Writer) -> StocktakingDetail:
     return service.detail(session, service.cancel_session(session, session_id))
+
+
+@router.put("/stocktakings/{session_id}/lines/{product_id}", response_model=StocktakingDetail)
+def set_counted_quantity(
+    session_id: int, product_id: int, data: CountedQuantity, session: DbSession, _: Writer
+) -> StocktakingDetail:
+    inventory = service.set_counted(session, session_id, product_id, data.counted_qty)
+    return service.detail(session, inventory)
+
+
+@router.post("/stocktakings/{session_id}/close", response_model=StocktakingDetail)
+def close_stocktaking(session_id: int, session: DbSession, user: Writer) -> StocktakingDetail:
+    return service.detail(session, service.close_session(session, user, session_id))
