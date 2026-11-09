@@ -91,7 +91,7 @@ def get_stock(session: Session, product_id: int) -> StockLevel:
     )
 
 
-def _require_whole_for_pieces(product: Product, quantity: Decimal) -> None:
+def require_whole_for_pieces(product: Product, quantity: Decimal) -> None:
     if product.unit == "pcs" and quantity != quantity.to_integral_value():
         raise Unprocessable("Для штучных товаров количество должно быть целым")
 
@@ -106,7 +106,7 @@ def receive(session: Session, user: User, data: ReceiptCreate) -> Batch:
         raise NotFound("Поставщик не найден", {"supplier_id": str(data.supplier_id)})
     if not supplier.is_active:
         raise Conflict("Поставщик в архиве", {"supplier_id": str(supplier.id)})
-    _require_whole_for_pieces(product, data.quantity)
+    require_whole_for_pieces(product, data.quantity)
 
     duplicate = session.scalar(
         select(Batch.id).where(Batch.product_id == product.id, Batch.batch_no == data.batch_no)
@@ -169,7 +169,7 @@ def write_off(
     """
     today = today or date.today()
     product = lock_product(session, data.product_id)
-    _require_whole_for_pieces(product, data.quantity)
+    require_whole_for_pieces(product, data.quantity)
 
     skip_expired = data.reason == "SALE"
     batches = _batches_fefo(session, product.id, today, skip_expired)
@@ -210,3 +210,50 @@ def write_off(
     return WriteOffResult(
         product_id=product.id, reason=data.reason, quantity=data.quantity, lines=lines
     )
+
+
+def available_quantity(session: Session, product_id: int) -> Decimal:
+    """Сколько можно обещать: на складе минус в резерве."""
+    return get_totals(session, product_id).available
+
+
+def reserve(
+    session: Session, user: User, product: Product, quantity: Decimal, reservation_id: int
+) -> StockMovement:
+    """Движение RESERVE: уменьшает «доступно», не трогая «на складе» (товар уже заблокирован)."""
+    available = available_quantity(session, product.id)
+    if quantity > available:
+        raise InsufficientStock(
+            f"Запрошено {quantity:.3f}, доступно {max(available, ZERO):.3f}",
+            {
+                "product_id": str(product.id),
+                "requested": f"{quantity:.3f}",
+                "available": f"{max(available, ZERO):.3f}",
+            },
+        )
+    movement = StockMovement(
+        type="RESERVE",
+        product_id=product.id,
+        reservation_id=reservation_id,
+        reserved_delta=quantity,
+        user_id=user.id,
+    )
+    session.add(movement)
+    session.flush()
+    return movement
+
+
+def release(
+    session: Session, user: User, product_id: int, quantity: Decimal, reservation_id: int
+) -> StockMovement:
+    """Движение RELEASE: возвращает зарезервированное количество в «доступно»."""
+    movement = StockMovement(
+        type="RELEASE",
+        product_id=product_id,
+        reservation_id=reservation_id,
+        reserved_delta=-quantity,
+        user_id=user.id,
+    )
+    session.add(movement)
+    session.flush()
+    return movement
