@@ -160,7 +160,11 @@ def _batches_fefo(
 
 
 def write_off(
-    session: Session, user: User, data: WriteOffCreate, today: date | None = None
+    session: Session,
+    user: User,
+    data: WriteOffCreate,
+    today: date | None = None,
+    reservation_id: int | None = None,
 ) -> WriteOffResult:
     """Списание по FEFO: из каждой затронутой партии отдельная запись WRITE_OFF.
 
@@ -200,6 +204,7 @@ def write_off(
                 batch_id=batch.id,
                 quantity_delta=-take,
                 reason=data.reason,
+                reservation_id=reservation_id,
                 user_id=user.id,
                 comment=data.comment,
             )
@@ -244,7 +249,12 @@ def reserve(
 
 
 def release(
-    session: Session, user: User, product_id: int, quantity: Decimal, reservation_id: int
+    session: Session,
+    user: User,
+    product_id: int,
+    quantity: Decimal,
+    reservation_id: int,
+    comment: str | None = None,
 ) -> StockMovement:
     """Движение RELEASE: возвращает зарезервированное количество в «доступно»."""
     movement = StockMovement(
@@ -253,6 +263,7 @@ def release(
         reservation_id=reservation_id,
         reserved_delta=-quantity,
         user_id=user.id,
+        comment=comment,
     )
     session.add(movement)
     session.flush()

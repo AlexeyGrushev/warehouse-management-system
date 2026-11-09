@@ -40,3 +40,13 @@ def list_reservations(
 @router.get("/reservations/{reservation_id}", response_model=ReservationRead)
 def read_reservation(reservation_id: int, session: DbSession, _: Reader) -> Reservation:
     return service.get_reservation(session, reservation_id)
+
+
+@router.post("/reservations/{reservation_id}/cancel", response_model=ReservationRead)
+def cancel_reservation(reservation_id: int, session: DbSession, user: Writer) -> Reservation:
+    return service.cancel_reservation(session, user, reservation_id)
+
+
+@router.post("/reservations/{reservation_id}/fulfill", response_model=ReservationRead)
+def fulfill_reservation(reservation_id: int, session: DbSession, user: Writer) -> Reservation:
+    return service.fulfill_reservation(session, user, reservation_id)
