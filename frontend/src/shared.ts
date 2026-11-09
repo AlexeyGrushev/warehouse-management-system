@@ -39,3 +39,17 @@ export function formatDateTime(iso: string): string {
     minute: '2-digit',
   })
 }
+
+export const RESERVATION_STATUSES = {
+  ACTIVE: { label: 'Активен', color: 'blue' },
+  FULFILLED: { label: 'Исполнен', color: 'green' },
+  CANCELLED: { label: 'Отменён', color: 'default' },
+  EXPIRED: { label: 'Истёк', color: 'orange' },
+} as const
+
+export const STOCKTAKING_STATUSES = {
+  DRAFT: { label: 'Черновик', color: 'default' },
+  IN_PROGRESS: { label: 'Идёт', color: 'processing' },
+  CLOSED: { label: 'Закрыта', color: 'green' },
+  CANCELLED: { label: 'Отменена', color: 'default' },
+} as const

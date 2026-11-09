@@ -121,3 +121,55 @@ export interface StockLevel {
   available: string
   min_stock: string | null
 }
+
+export type ReservationStatus = 'ACTIVE' | 'FULFILLED' | 'CANCELLED' | 'EXPIRED'
+
+export interface ReservationItem {
+  product_id: number
+  quantity: string
+}
+
+export interface Reservation {
+  id: number
+  reference: string
+  status: ReservationStatus
+  expires_at: string
+  created_by: number
+  created_at: string
+  items: ReservationItem[]
+}
+
+export interface ReservationInput {
+  reference: string
+  // ISO-строка с часовым поясом; если не указать, сервер поставит срок +7 дней
+  expires_at: string | null
+  items: { product_id: number; quantity: string }[]
+}
+
+export type StocktakingStatus = 'DRAFT' | 'IN_PROGRESS' | 'CLOSED' | 'CANCELLED'
+
+export interface StocktakingSummary {
+  id: number
+  status: StocktakingStatus
+  created_by: number
+  created_at: string
+  started_at: string | null
+  closed_at: string | null
+  lines_total: number
+  lines_counted: number
+}
+
+export interface StocktakingLine {
+  product_id: number
+  sku: string
+  name: string
+  unit: string
+  expected_qty: string | null
+  counted_qty: string | null
+  // насчитали минус ожидали; пока не введено — null
+  diff: string | null
+}
+
+export interface StocktakingDetail extends StocktakingSummary {
+  lines: StocktakingLine[]
+}
