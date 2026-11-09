@@ -5,6 +5,7 @@ import { LoginPage } from './features/auth/LoginPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { MovementsPage } from './features/movements/MovementsPage'
 import { ProductsPage } from './features/products/ProductsPage'
+import { ReservationsPage } from './features/reservations/ReservationsPage'
 import { StockPage } from './features/stock/StockPage'
 
 export function AppRoutes() {
@@ -16,6 +17,7 @@ export function AppRoutes() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/stock" element={<StockPage />} />
           <Route path="/movements" element={<MovementsPage />} />
+          <Route path="/reservations" element={<ReservationsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/products" replace />} />
