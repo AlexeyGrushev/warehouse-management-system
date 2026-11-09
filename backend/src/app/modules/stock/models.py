@@ -74,11 +74,13 @@ class StockMovement(IdMixin, CreatedAtMixin, Base):
         Index("ix_stock_movements_product_created", "product_id", text("created_at DESC")),
         Index("ix_stock_movements_created_at", "created_at"),
         Index("ix_stock_movements_batch_id", "batch_id"),
+        Index("ix_stock_movements_reservation_id", "reservation_id"),
     )
 
     type: Mapped[str] = mapped_column(Text)
     product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("products.id"))
     batch_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("batches.id"))
+    reservation_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("reservations.id"))
     quantity_delta: Mapped[Decimal] = mapped_column(Numeric(14, 3), server_default=text("0"))
     reserved_delta: Mapped[Decimal] = mapped_column(Numeric(14, 3), server_default=text("0"))
     reason: Mapped[str | None] = mapped_column(Text)
