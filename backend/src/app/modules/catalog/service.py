@@ -62,6 +62,20 @@ def _ensure_no_cycle(session: Session, category_id: int, new_parent_id: int) -> 
         current = session.scalar(select(Category.parent_id).where(Category.id == current))
 
 
+def category_subtree_ids(session: Session, category_id: int) -> list[int]:
+    """Категория и все её подкатегории (рекурсивно)."""
+    get_category(session, category_id)
+    found = [category_id]
+    frontier = [category_id]
+    while frontier:
+        children = list(
+            session.scalars(select(Category.id).where(Category.parent_id.in_(frontier)))
+        )
+        found.extend(children)
+        frontier = children
+    return found
+
+
 def create_category(session: Session, data: CategoryCreate) -> Category:
     if data.parent_id is not None:
         get_category(session, data.parent_id)

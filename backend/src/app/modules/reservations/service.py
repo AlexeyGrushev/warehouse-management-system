@@ -62,6 +62,7 @@ def create_reservation(
         product.id: product
         for product in stock_service.lock_products(session, [i.product_id for i in data.items])
     }
+    stock_service.ensure_not_in_stocktaking(session, list(products))
     for item in data.items:
         product = products[item.product_id]
         if not product.is_active:

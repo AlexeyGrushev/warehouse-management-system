@@ -30,6 +30,11 @@ class InsufficientStock(AppError):
     code = "INSUFFICIENT_STOCK"
 
 
+class StocktakingInProgress(AppError):
+    status_code = 409
+    code = "STOCKTAKING_IN_PROGRESS"
+
+
 class Forbidden(AppError):
     status_code = 403
     code = "FORBIDDEN"

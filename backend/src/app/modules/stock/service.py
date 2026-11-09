@@ -10,7 +10,13 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.errors import Conflict, InsufficientStock, NotFound, Unprocessable
+from app.core.errors import (
+    Conflict,
+    InsufficientStock,
+    NotFound,
+    StocktakingInProgress,
+    Unprocessable,
+)
 from app.modules.auth.models import User
 from app.modules.catalog.models import Product
 from app.modules.stock.models import Batch, StockMovement
@@ -22,6 +28,7 @@ from app.modules.stock.schemas import (
     WriteOffLine,
     WriteOffResult,
 )
+from app.modules.stocktaking.models import InventoryLine, InventorySession
 from app.modules.suppliers.models import Supplier
 
 ZERO = Decimal("0")
@@ -47,6 +54,22 @@ def lock_products(session: Session, product_ids: list[int]) -> list[Product]:
     if missing:
         raise NotFound("Товар не найден", {"product_id": str(min(missing))})
     return products
+
+
+def ensure_not_in_stocktaking(session: Session, product_ids: list[int]) -> None:
+    """Пока идёт инвентаризация, приход, списание и новые резервы по её товарам запрещены."""
+    row = session.execute(
+        select(InventoryLine.product_id, InventoryLine.session_id)
+        .join(InventorySession, InventorySession.id == InventoryLine.session_id)
+        .where(InventorySession.status == "IN_PROGRESS", InventoryLine.product_id.in_(product_ids))
+        .order_by(InventoryLine.product_id)
+        .limit(1)
+    ).first()
+    if row is not None:
+        raise StocktakingInProgress(
+            "По товару идёт инвентаризация: движения временно запрещены",
+            {"product_id": str(row[0]), "inventory_session_id": str(row[1])},
+        )
 
 
 def get_totals(session: Session, product_id: int) -> StockTotals:
@@ -99,6 +122,7 @@ def require_whole_for_pieces(product: Product, quantity: Decimal) -> None:
 def receive(session: Session, user: User, data: ReceiptCreate) -> Batch:
     """Приход: создаёт партию и записывает движение RECEIPT в одной транзакции."""
     product = lock_product(session, data.product_id)
+    ensure_not_in_stocktaking(session, [product.id])
     if not product.is_active:
         raise Conflict("Товар в архиве", {"product_id": str(product.id)})
     supplier = session.get(Supplier, data.supplier_id)
@@ -173,6 +197,7 @@ def write_off(
     """
     today = today or date.today()
     product = lock_product(session, data.product_id)
+    ensure_not_in_stocktaking(session, [product.id])
     require_whole_for_pieces(product, data.quantity)
 
     skip_expired = data.reason == "SALE"
