@@ -83,8 +83,11 @@ JWT access-токен в заголовке `Authorization: Bearer …`, сро�
 `require_role("storekeeper")` на уровне роутера/эндпоинта (иерархия: `viewer < storekeeper < admin`, см. матрицу в DOMAIN.md).
 
 ### Фоновые задачи
-- Истечение резервов: `ACTIVE` с `expires_at < now()` → `EXPIRED` + `RELEASE`. Реализация в MVP — простой планировщик внутри процесса
-  (APScheduler) либо отдельная команда `python -m app.jobs.expire_reservations`, которую вызывает cron. Выбор зафиксируйте здесь.
+- Истечение резервов: `ACTIVE` с `expires_at <= now()` → `EXPIRED` + `RELEASE`.
+  **Выбор:** простой asyncio-цикл внутри процесса backend (`app/jobs/scheduler.py`, запускается в lifespan приложения). Интервал задаёт
+  `RESERVATION_EXPIRY_INTERVAL_SECONDS` (по умолчанию 60, `0` отключает). Цикл работает в пуле потоков, ошибка прохода логируется и не
+  останавливает его. Отдельный планировщик не нужен: нет новых зависимостей, всё в том же контейнере; при нескольких процессах backend
+  резервы не обрабатываются дважды (`FOR UPDATE SKIP LOCKED`). Вручную или по cron: `python -m app.jobs.expire_reservations`.
 
 ## Frontend (целевая структура)
 ```

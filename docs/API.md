@@ -53,20 +53,22 @@
 ### Резервы — спринт 3
 | Метод | Путь | Права | Описание |
 |---|---|---|---|
-| POST | `/reservations` | W | `{reference, expires_at?, items:[{product_id, quantity}]}`; `409` если не хватает |
-| GET | `/reservations`, `/reservations/{id}` | R | фильтр по `status`, `reference` |
-| POST | `/reservations/{id}/cancel` | W | |
-| POST | `/reservations/{id}/fulfill` | W | отгрузка: RELEASE + списание FEFO |
+| POST | `/reservations` | W | `{reference, expires_at?, items:[{product_id, quantity}]}` → `201` и резерв с позициями. «Всё или ничего»: если хотя бы одной позиции не хватает — `409 INSUFFICIENT_STOCK` (в `meta` первая нехватка), ничего не создаётся. `422` — пустой список, повтор товара, срок не в будущем, дробное для штучного; `409 STOCKTAKING_IN_PROGRESS` — по товару идёт инвентаризация |
+| GET | `/reservations`, `/reservations/{id}` | R | фильтры `status`, `reference` (поиск по подстроке); новые сверху; пагинация |
+| POST | `/reservations/{id}/cancel` | W | `RELEASE` по позициям, статус `CANCELLED`; `409`, если резерв уже в конечном статусе |
+| POST | `/reservations/{id}/fulfill` | W | отгрузка: `RELEASE` и списание по FEFO (`SALE`) по каждой позиции, статус `FULFILLED`. `409`: уже в конечном статусе, срок истёк, не хватает непросроченного товара (откат целиком) |
+
+Истёкшие резервы освобождает фоновая задача (`EXPIRED` + `RELEASE`); её же можно запустить вручную: `python -m app.jobs.expire_reservations`.
 
 ### Инвентаризация — спринт 3
 | Метод | Путь | Права | Описание |
 |---|---|---|---|
-| POST | `/stocktakings` | W | создать (`category_id?` — по категории, иначе все товары) |
-| POST | `/stocktakings/{id}/start` | W | зафиксировать `expected_qty`, заблокировать движения |
-| PUT | `/stocktakings/{id}/lines/{product_id}` | W | `{counted_qty}` |
-| POST | `/stocktakings/{id}/close` | W | применить корректировки |
-| POST | `/stocktakings/{id}/cancel` | W | |
-| GET | `/stocktakings`, `/stocktakings/{id}` | R | со строками и расхождениями |
+| POST | `/stocktakings` | W | `{category_id?}` → `201`, сессия `DRAFT` со строками; без категории — все активные товары, с категорией — она и её подкатегории; `422`, если товаров нет |
+| POST | `/stocktakings/{id}/start` | W | фиксирует `expected_qty` = остаток на складе, статус `IN_PROGRESS`, запрещает движения по товарам; `409`, если не `DRAFT` или товар уже в другой открытой сессии (`STOCKTAKING_IN_PROGRESS`) |
+| PUT | `/stocktakings/{id}/lines/{product_id}` | W | `{counted_qty}` (≥ 0), только в `IN_PROGRESS`; `404`, если товара нет в сессии |
+| POST | `/stocktakings/{id}/close` | W | проводит корректировки (`ADJUSTMENT`) и ставит `CLOSED`; `422`, если заполнены не все строки |
+| POST | `/stocktakings/{id}/cancel` | W | из `DRAFT` или `IN_PROGRESS`, снимает запрет на движения |
+| GET | `/stocktakings`, `/stocktakings/{id}` | R | список со счётчиками `lines_total` / `lines_counted` (фильтр `status`); карточка со строками: `expected_qty`, `counted_qty`, `diff` |
 
 ### Нехватка — спринт 4
 | Метод | Путь | Права | Описание |
