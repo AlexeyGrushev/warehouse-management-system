@@ -24,6 +24,7 @@ services:
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me}
+      RESERVATION_EXPIRY_INTERVAL_SECONDS: ${RESERVATION_EXPIRY_INTERVAL_SECONDS:-60}
     ports:
       - "8000:8000"
     depends_on:

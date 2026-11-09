@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     admin_email: str = "admin@example.com"
     admin_password: str = "change-me"
+    # Как часто фоновая задача освобождает истёкшие резервы (секунды); 0 — не запускать
+    reservation_expiry_interval_seconds: float = 60
 
 
 @lru_cache
