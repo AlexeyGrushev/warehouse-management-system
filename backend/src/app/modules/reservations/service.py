@@ -10,6 +10,7 @@ from app.modules.auth.models import User
 from app.modules.reservations.models import Reservation, ReservationItem
 from app.modules.reservations.schemas import ReservationCreate
 from app.modules.stock import service as stock_service
+from app.modules.stock.schemas import WriteOffCreate
 
 MOSCOW = ZoneInfo("Europe/Moscow")
 DEFAULT_TTL = timedelta(days=7)
@@ -104,3 +105,107 @@ def create_reservation(
     session.flush()
     session.refresh(reservation)
     return get_reservation(session, reservation.id)
+
+
+STATUS_LABELS = {"FULFILLED": "исполнен", "CANCELLED": "отменён", "EXPIRED": "истёк"}
+
+
+def _lock_active(session: Session, reservation_id: int) -> Reservation:
+    """Блокирует резерв и проверяет, что он ещё активен (повторные вызовы не освободят дважды)."""
+    reservation = session.scalar(
+        select(Reservation).where(Reservation.id == reservation_id).with_for_update()
+    )
+    if reservation is None:
+        raise NotFound("Резерв не найден", {"reservation_id": str(reservation_id)})
+    if reservation.status != "ACTIVE":
+        label = STATUS_LABELS.get(reservation.status, reservation.status)
+        raise Conflict(
+            f"Резерв уже {label}: из конечного статуса выхода нет",
+            {"reservation_id": str(reservation_id), "status": reservation.status},
+        )
+    return reservation
+
+
+def _items_sorted(reservation: Reservation) -> list[ReservationItem]:
+    return sorted(reservation.items, key=lambda item: item.product_id)
+
+
+def cancel_reservation(session: Session, user: User, reservation_id: int) -> Reservation:
+    reservation = _lock_active(session, reservation_id)
+    items = _items_sorted(reservation)
+    stock_service.lock_products(session, [item.product_id for item in items])
+    for item in items:
+        stock_service.release(
+            session, user, item.product_id, item.quantity, reservation.id, "Отмена резерва"
+        )
+    reservation.status = "CANCELLED"
+    session.flush()
+    return get_reservation(session, reservation.id)
+
+
+def fulfill_reservation(
+    session: Session, user: User, reservation_id: int, now: datetime | None = None
+) -> Reservation:
+    """Отгрузка: для каждой позиции RELEASE и списание по FEFO (причина SALE) ровно на резерв."""
+    now = now or datetime.now(UTC)
+    reservation = _lock_active(session, reservation_id)
+    if reservation.expires_at <= now:
+        raise Conflict(
+            "Срок действия резерва истёк, исполнить его нельзя",
+            {"reservation_id": str(reservation_id)},
+        )
+    items = _items_sorted(reservation)
+    stock_service.lock_products(session, [item.product_id for item in items])
+    # Если какая-то позиция не спишется, откатывается вся отгрузка, а не часть
+    with session.begin_nested():
+        for item in items:
+            stock_service.release(
+                session, user, item.product_id, item.quantity, reservation.id, "Отгрузка по резерву"
+            )
+            stock_service.write_off(
+                session,
+                user,
+                WriteOffCreate(
+                    product_id=item.product_id,
+                    quantity=item.quantity,
+                    reason="SALE",
+                    comment=f"Отгрузка по заказу {reservation.reference}",
+                ),
+                reservation_id=reservation.id,
+            )
+        reservation.status = "FULFILLED"
+        session.flush()
+    return get_reservation(session, reservation.id)
+
+
+def expire_due_reservations(session: Session, now: datetime | None = None, limit: int = 200) -> int:
+    """Переводит просроченные ACTIVE-резервы в EXPIRED и освобождает их количество.
+
+    Возвращает число обработанных резервов. Безопасно запускать параллельно:
+    уже захваченные другим процессом резервы пропускаются.
+    """
+    now = now or datetime.now(UTC)
+    due = session.scalars(
+        select(Reservation)
+        .where(Reservation.status == "ACTIVE", Reservation.expires_at <= now)
+        .order_by(Reservation.id)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+        .options(selectinload(Reservation.items))
+    ).all()
+    for reservation in due:
+        items = _items_sorted(reservation)
+        stock_service.lock_products(session, [item.product_id for item in items])
+        creator = session.get(User, reservation.created_by)
+        for item in items:
+            stock_service.release(
+                session,
+                creator,
+                item.product_id,
+                item.quantity,
+                reservation.id,
+                "Истёк срок резерва",
+            )
+        reservation.status = "EXPIRED"
+    session.flush()
+    return len(due)
