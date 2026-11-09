@@ -1,10 +1,23 @@
-import { PlusOutlined } from '@ant-design/icons'
-import { useQuery } from '@tanstack/react-query'
-import { Alert, Button, Input, Select, Space, Table, Tag, Typography } from 'antd'
+import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Alert,
+  Button,
+  Input,
+  Popconfirm,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 
-import { fetchReservations } from '../../api/reservations'
+import { ApiError } from '../../api/client'
+import { cancelReservation, fetchReservations, fulfillReservation } from '../../api/reservations'
 import type { Reservation, ReservationStatus } from '../../api/types'
 import { RESERVATION_STATUSES, formatDateTime } from '../../shared'
 import { useAuth } from '../auth/auth-state'
@@ -20,6 +33,32 @@ export function ReservationsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const { user } = useAuth()
   const canWrite = user !== null && user.role !== 'viewer'
+  const queryClient = useQueryClient()
+
+  const refresh = () => {
+    for (const key of ['reservations', 'stock', 'product-stock', 'movements']) {
+      void queryClient.invalidateQueries({ queryKey: [key] })
+    }
+  }
+  const onError = (e: Error) =>
+    message.error(e instanceof ApiError ? e.message : 'Не удалось выполнить действие')
+
+  const cancel = useMutation({
+    mutationFn: cancelReservation,
+    onSuccess: (reservation) => {
+      message.success(`Резерв по заказу ${reservation.reference} отменён`)
+      refresh()
+    },
+    onError,
+  })
+  const fulfill = useMutation({
+    mutationFn: fulfillReservation,
+    onSuccess: (reservation) => {
+      message.success(`Заказ ${reservation.reference} отгружен, товар списан со склада`)
+      refresh()
+    },
+    onError,
+  })
 
   const reservations = useQuery({
     queryKey: ['reservations', reference, status, page],
@@ -58,6 +97,60 @@ export function ReservationsPage() {
       render: (value: string) => formatDateTime(value),
     },
   ]
+
+  if (canWrite) {
+    columns.push({
+      title: '',
+      width: 230,
+      render: (_, row) => {
+        if (row.status !== 'ACTIVE') {
+          return null
+        }
+        const overdue = new Date(row.expires_at).getTime() <= Date.now()
+        return (
+          <Space>
+            <Tooltip title={overdue ? 'Срок действия истёк, резерв скоро освободится сам' : undefined}>
+              <Popconfirm
+                title="Исполнить резерв?"
+                description="Товар будет списан со склада по FEFO."
+                okText="Исполнить"
+                cancelText="Нет"
+                onConfirm={() => fulfill.mutate(row.id)}
+                disabled={overdue}
+              >
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  disabled={overdue}
+                  loading={fulfill.isPending && fulfill.variables === row.id}
+                >
+                  Исполнить
+                </Button>
+              </Popconfirm>
+            </Tooltip>
+            <Popconfirm
+              title="Отменить резерв?"
+              description="Количество вернётся в «Доступно»."
+              okText="Отменить резерв"
+              okButtonProps={{ danger: true }}
+              cancelText="Нет"
+              onConfirm={() => cancel.mutate(row.id)}
+            >
+              <Button
+                size="small"
+                danger
+                icon={<CloseOutlined />}
+                loading={cancel.isPending && cancel.variables === row.id}
+              >
+                Отменить
+              </Button>
+            </Popconfirm>
+          </Space>
+        )
+      },
+    })
+  }
 
   return (
     <>
@@ -104,6 +197,7 @@ export function ReservationsPage() {
         columns={columns}
         dataSource={reservations.data?.items}
         loading={reservations.isFetching}
+        scroll={{ x: 'max-content' }}
         expandable={{ expandedRowRender: (row) => <ReservationItemsList items={row.items} /> }}
         pagination={{
           current: page,
