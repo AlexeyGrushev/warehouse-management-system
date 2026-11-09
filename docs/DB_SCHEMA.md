@@ -180,7 +180,8 @@ Append-only: в коде нет UPDATE/DELETE; опционально тригг
 
 ### inventory_sessions / inventory_lines
 `inventory_sessions`: `status` CHECK IN ('DRAFT','IN_PROGRESS','CLOSED','CANCELLED'), `started_at`, `closed_at`, `created_by`.
-`inventory_lines`: UNIQUE `(session_id, product_id)`, `expected_qty` NOT NULL после старта, `counted_qty` NULL пока не введён, CHECK `counted_qty IS NULL OR counted_qty >= 0`.
+`inventory_lines`: UNIQUE `(session_id, product_id)`, `expected_qty` NULL до старта и неотрицателен, `counted_qty` NULL пока не введён, CHECK `counted_qty IS NULL OR counted_qty >= 0`; индекс по `product_id` (проверка «товар в другой открытой сессии»).
+Индекс `inventory_sessions(status)`; у `stock_movements` индексы по `reservation_id` и `inventory_session_id`.
 Ограничение «один товар — не более чем в одной открытой сессии» проверяется в сервисе (с блокировкой товара).
 
 ## Инварианты (на них написать тесты)
