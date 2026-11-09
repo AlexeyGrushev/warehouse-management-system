@@ -22,3 +22,7 @@ export function fetchProducts({ q, isActive, page, size }: ProductFilters): Prom
 export function fetchCategories(): Promise<Category[]> {
   return apiFetch<Category[]>('/categories')
 }
+
+export function fetchProduct(id: number): Promise<Product> {
+  return apiFetch<Product>(`/products/${id}`)
+}
