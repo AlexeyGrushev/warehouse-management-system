@@ -1,4 +1,5 @@
 import {
+  AuditOutlined,
   DatabaseOutlined,
   HistoryOutlined,
   LockOutlined,
@@ -20,6 +21,7 @@ const MENU_ITEMS = [
   { key: '/products', icon: <ShoppingOutlined />, label: 'Товары' },
   { key: '/stock', icon: <DatabaseOutlined />, label: 'Остатки' },
   { key: '/reservations', icon: <LockOutlined />, label: 'Резервы' },
+  { key: '/stocktakings', icon: <AuditOutlined />, label: 'Инвентаризация' },
   { key: '/movements', icon: <HistoryOutlined />, label: 'Журнал движений' },
 ]
 
@@ -36,7 +38,7 @@ export function AppLayout() {
         </Typography.Title>
         <Menu
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[`/${location.pathname.split('/')[1]}`]}
           items={MENU_ITEMS}
           onClick={({ key }) => navigate(key)}
         />
