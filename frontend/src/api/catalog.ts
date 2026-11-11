@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Category, Page, Product, ProductInput } from './types'
+import type { Category, CategoryInput, CategoryNode, Page, Product, ProductInput } from './types'
 
 export interface ProductFilters {
   q?: string
@@ -37,4 +37,20 @@ export function updateProduct(id: number, data: ProductInput): Promise<Product> 
 
 export function archiveProduct(id: number): Promise<void> {
   return apiFetch<void>(`/products/${id}/archive`, { method: 'POST' })
+}
+
+export function fetchCategoryTree(): Promise<CategoryNode[]> {
+  return apiFetch<CategoryNode[]>('/categories?tree=true')
+}
+
+export function createCategory(data: CategoryInput): Promise<Category> {
+  return apiFetch<Category>('/categories', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateCategory(id: number, data: CategoryInput): Promise<Category> {
+  return apiFetch<Category>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export function archiveCategory(id: number): Promise<void> {
+  return apiFetch<void>(`/categories/${id}/archive`, { method: 'POST' })
 }

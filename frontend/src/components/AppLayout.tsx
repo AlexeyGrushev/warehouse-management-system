@@ -1,4 +1,5 @@
 import {
+  ApartmentOutlined,
   AuditOutlined,
   DatabaseOutlined,
   HistoryOutlined,
@@ -19,6 +20,7 @@ const ROLE_LABELS = {
 
 const MENU_ITEMS = [
   { key: '/products', icon: <ShoppingOutlined />, label: 'Товары' },
+  { key: '/categories', icon: <ApartmentOutlined />, label: 'Категории' },
   { key: '/stock', icon: <DatabaseOutlined />, label: 'Остатки' },
   { key: '/reservations', icon: <LockOutlined />, label: 'Резервы' },
   { key: '/stocktakings', icon: <AuditOutlined />, label: 'Инвентаризация' },
