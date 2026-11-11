@@ -191,3 +191,8 @@ export interface CategoryInput {
   name: string
   parent_id: number | null
 }
+
+export interface SupplierInput {
+  name: string
+  contact: string | null
+}

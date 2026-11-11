@@ -7,6 +7,7 @@ import { CategoriesPage } from './features/categories/CategoriesPage'
 import { MovementsPage } from './features/movements/MovementsPage'
 import { ProductsPage } from './features/products/ProductsPage'
 import { ReservationsPage } from './features/reservations/ReservationsPage'
+import { SuppliersPage } from './features/suppliers/SuppliersPage'
 import { StocktakingPage } from './features/stocktaking/StocktakingPage'
 import { StocktakingsPage } from './features/stocktaking/StocktakingsPage'
 import { StockPage } from './features/stock/StockPage'
@@ -19,6 +20,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/suppliers" element={<SuppliersPage />} />
           <Route path="/stock" element={<StockPage />} />
           <Route path="/movements" element={<MovementsPage />} />
           <Route path="/reservations" element={<ReservationsPage />} />
