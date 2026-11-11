@@ -173,3 +173,12 @@ export interface StocktakingLine {
 export interface StocktakingDetail extends StocktakingSummary {
   lines: StocktakingLine[]
 }
+
+export interface ProductInput {
+  sku: string
+  name: string
+  category_id: number
+  unit: string
+  min_stock: string
+  target_stock: string | null
+}

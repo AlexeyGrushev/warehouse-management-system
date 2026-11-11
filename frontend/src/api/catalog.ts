@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Category, Page, Product } from './types'
+import type { Category, Page, Product, ProductInput } from './types'
 
 export interface ProductFilters {
   q?: string
@@ -25,4 +25,16 @@ export function fetchCategories(): Promise<Category[]> {
 
 export function fetchProduct(id: number): Promise<Product> {
   return apiFetch<Product>(`/products/${id}`)
+}
+
+export function createProduct(data: ProductInput): Promise<Product> {
+  return apiFetch<Product>('/products', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateProduct(id: number, data: ProductInput): Promise<Product> {
+  return apiFetch<Product>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export function archiveProduct(id: number): Promise<void> {
+  return apiFetch<void>(`/products/${id}/archive`, { method: 'POST' })
 }
