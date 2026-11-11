@@ -23,7 +23,7 @@ from app.modules.stock.schemas import (
 
 router = APIRouter(tags=["stock"])
 
-DbSession = Annotated[Session, Depends(get_session)]
+DbSession = Annotated[Session, Depends(get_session, scope="function")]
 Reader = Annotated[User, Depends(require_role("viewer"))]
 Writer = Annotated[User, Depends(require_role("storekeeper"))]
 
