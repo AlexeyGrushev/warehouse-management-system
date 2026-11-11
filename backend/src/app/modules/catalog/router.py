@@ -21,7 +21,7 @@ from app.modules.catalog.schemas import (
 
 router = APIRouter(tags=["catalog"])
 
-DbSession = Annotated[Session, Depends(get_session)]
+DbSession = Annotated[Session, Depends(get_session, scope="function")]
 Reader = Annotated[User, Depends(require_role("viewer"))]
 Writer = Annotated[User, Depends(require_role("storekeeper"))]
 

@@ -13,7 +13,7 @@ from app.modules.suppliers.schemas import SupplierCreate, SupplierRead, Supplier
 
 router = APIRouter(tags=["suppliers"])
 
-DbSession = Annotated[Session, Depends(get_session)]
+DbSession = Annotated[Session, Depends(get_session, scope="function")]
 Reader = Annotated[User, Depends(require_role("viewer"))]
 Writer = Annotated[User, Depends(require_role("storekeeper"))]
 

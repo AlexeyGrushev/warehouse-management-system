@@ -17,7 +17,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[Session, Depends(get_session, scope="function")],
 ) -> User:
     if credentials is None:
         raise Unauthorized("Требуется авторизация")

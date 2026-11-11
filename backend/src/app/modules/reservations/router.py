@@ -13,7 +13,7 @@ from app.modules.reservations.schemas import ReservationCreate, ReservationRead
 
 router = APIRouter(tags=["reservations"])
 
-DbSession = Annotated[Session, Depends(get_session)]
+DbSession = Annotated[Session, Depends(get_session, scope="function")]
 Reader = Annotated[User, Depends(require_role("viewer"))]
 Writer = Annotated[User, Depends(require_role("storekeeper"))]
 
