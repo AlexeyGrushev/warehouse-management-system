@@ -182,3 +182,12 @@ export interface ProductInput {
   min_stock: string
   target_stock: string | null
 }
+
+export interface CategoryNode extends Category {
+  children: CategoryNode[]
+}
+
+export interface CategoryInput {
+  name: string
+  parent_id: number | null
+}
