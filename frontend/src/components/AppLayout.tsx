@@ -9,9 +9,11 @@ import {
   TeamOutlined,
   WarningOutlined,
 } from '@ant-design/icons'
-import { Button, Layout, Menu, Space, Tag, Typography } from 'antd'
+import { useQuery } from '@tanstack/react-query'
+import { Badge, Button, Layout, Menu, Space, Tag, Typography } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+import { fetchLowStock } from '../api/alerts'
 import { useAuth } from '../features/auth/auth-state'
 
 const ROLE_LABELS = {
@@ -36,6 +38,28 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Число товаров ниже минимума: тот же отчёт, что на странице «Заканчивается», берём только total.
+  // Каркас живёт между переходами, поэтому лишних запросов нет; после операций ключ 'alerts' сбрасывается.
+  const lowStockCount = useQuery({
+    queryKey: ['alerts', 'low-stock-count'],
+    queryFn: () => fetchLowStock({ page: 1, size: 1 }),
+    select: (result) => result.total,
+    staleTime: 60_000,
+  })
+  const menuItems = MENU_ITEMS.map((item) =>
+    item.key === '/low-stock'
+      ? {
+          ...item,
+          label: (
+            <Space size={8}>
+              {item.label}
+              <Badge count={lowStockCount.data ?? 0} overflowCount={99} />
+            </Space>
+          ),
+        }
+      : item,
+  )
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Layout.Sider breakpoint="lg" collapsedWidth={0} theme="light">
@@ -45,7 +69,7 @@ export function AppLayout() {
         <Menu
           mode="inline"
           selectedKeys={[`/${location.pathname.split('/')[1]}`]}
-          items={MENU_ITEMS}
+          items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
       </Layout.Sider>
