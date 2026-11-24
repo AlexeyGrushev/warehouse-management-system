@@ -7,7 +7,7 @@ from app.core.pagination import Page, PageQuery
 from app.db.session import get_session
 from app.modules.alerts import queries
 from app.modules.alerts.rules import Severity
-from app.modules.alerts.schemas import LowStockItem
+from app.modules.alerts.schemas import ExpiringBatch, LowStockItem
 from app.modules.auth.deps import require_role
 from app.modules.auth.models import User
 
@@ -29,4 +29,16 @@ def list_low_stock(
 ) -> Page[LowStockItem]:
     """Товары ниже минимального остатка, самые критичные сверху, с рекомендацией закупки."""
     items, total = queries.list_low_stock(session, params, category_id, severity)
+    return Page(items=items, total=total, page=params.page, size=params.size)
+
+
+@router.get("/expiring-batches", response_model=Page[ExpiringBatch])
+def list_expiring_batches(
+    session: DbSession,
+    _: Reader,
+    params: PageQuery,
+    days: Annotated[int, Query(ge=0, le=365, description="Горизонт в днях")] = 14,
+) -> Page[ExpiringBatch]:
+    """Партии с остатком, срок годности которых истекает в ближайшие days дней, и просроченные."""
+    items, total = queries.list_expiring_batches(session, params, days)
     return Page(items=items, total=total, page=params.page, size=params.size)

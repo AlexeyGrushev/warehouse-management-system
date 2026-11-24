@@ -1,16 +1,23 @@
 """Отчёты о нехватке: считаются по запросу из журнала движений."""
 
+from datetime import date, datetime, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.pagination import PageParams, paginate_rows
 from app.modules.alerts import rules
-from app.modules.alerts.schemas import LowStockItem
+from app.modules.alerts.schemas import ExpiringBatch, LowStockItem
 from app.modules.catalog import service as catalog_service
 from app.modules.catalog.models import Category, Product
 from app.modules.stock import queries as stock_queries
+from app.modules.stock.models import Batch
+from app.modules.stock.schemas import BatchDetail
+from app.modules.suppliers.models import Supplier
+
+MOSCOW = ZoneInfo("Europe/Moscow")
 
 
 def list_low_stock(
@@ -72,6 +79,53 @@ def list_low_stock(
                 deficit=shortage.deficit,
                 recommended_order_qty=shortage.recommended_order_qty,
                 severity=shortage.severity,
+            )
+        )
+    return items, total
+
+
+def today() -> date:
+    return datetime.now(MOSCOW).date()
+
+
+def list_expiring_batches(
+    session: Session, params: PageParams, days: int = 14, now: date | None = None
+) -> tuple[list[ExpiringBatch], int]:
+    """Партии с остатком, срок которых истекает в ближайшие days дней, и просроченные."""
+    current = now or today()
+    query = (
+        select(Batch, Product.sku, Product.name, Product.unit, Supplier.name)
+        .join(Product, Product.id == Batch.product_id)
+        .outerjoin(Supplier, Supplier.id == Batch.supplier_id)
+        .where(
+            Batch.qty_remaining > 0,
+            Batch.expires_at.is_not(None),
+            Batch.expires_at <= current + timedelta(days=days),
+        )
+        .order_by(Batch.expires_at, Batch.id)
+    )
+    rows, total = paginate_rows(session, query, params)
+    items = []
+    for batch, sku, name, unit, supplier_name in rows:
+        detail = BatchDetail.model_validate(
+            {
+                **{
+                    column: getattr(batch, column)
+                    for column in BatchDetail.model_fields
+                    if hasattr(batch, column)
+                },
+                "product_sku": sku,
+                "product_name": name,
+                "supplier_name": supplier_name,
+            }
+        )
+        days_left = (batch.expires_at - current).days
+        items.append(
+            ExpiringBatch(
+                **detail.model_dump(),
+                product_unit=unit,
+                days_left=days_left,
+                is_expired=days_left < 0,
             )
         )
     return items, total
