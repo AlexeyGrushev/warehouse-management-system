@@ -71,10 +71,14 @@
 | GET | `/stocktakings`, `/stocktakings/{id}` | R | список со счётчиками `lines_total` / `lines_counted` (фильтр `status`); карточка со строками: `expected_qty`, `counted_qty`, `diff` |
 
 ### Нехватка — спринт 4
+Правила расчёта и границы критичности — в [DOMAIN.md](DOMAIN.md#5-автоматическое-выявление-нехватки). Оба отчёта считаются по запросу из журнала движений, архивные товары не учитываются.
+
 | Метод | Путь | Права | Описание |
 |---|---|---|---|
-| GET | `/alerts/low-stock` | R | `[{product, available, min_stock, recommended_order_qty, severity}]` |
-| GET | `/alerts/expiring-batches?days=14` | R | партии, срок которых истекает |
+| GET | `/alerts/low-stock` | R | товары, у которых `available < min_stock`. Фильтры `category_id` (с подкатегориями, `404` для неизвестной) и `severity` (`CRITICAL` / `WARNING`), пагинация. Сортировка: сначала `CRITICAL`, внутри — от меньшей доли `available / min_stock`. Элемент: `product_id`, `sku`, `name`, `unit`, `category_id`, `category_name`, `on_hand`, `reserved`, `available`, `min_stock`, `target_stock`, `deficit`, `recommended_order_qty`, `severity` |
+| GET | `/alerts/expiring-batches` | R | партии с остатком и сроком годности не позже, чем сегодня плюс `days` (по умолчанию 14, от 0 до 365), в том числе просроченные. Сортировка по сроку, пагинация. Элемент — как в `/batches`, плюс `product_unit`, `days_left` (отрицательное для просроченных) и `is_expired` |
+
+Время ответа на тысяче товаров (ноутбук, PostgreSQL 16 в Docker, тест `test_alerts_performance.py`): `/alerts/low-stock` около 20 мс, `/stock?low_only=true` около 7 мс, `/alerts/expiring-batches` около 6 мс. Новых индексов не понадобилось: хватает `ix_batches_expires_at` и `ix_stock_movements_product_created`.
 
 ### Отчёты — спринт 5
 `GET /reports/stock.csv`, `GET /reports/movements.csv?date_from&date_to` (Content-Type `text/csv`).
