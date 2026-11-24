@@ -19,6 +19,9 @@ export interface WriteOffPreset {
   id: number
   label: string
   unit: string
+  /** Подставляется в форму, когда списание начинают из отчёта (например, по просроченной партии). */
+  reason?: WriteOffReason
+  quantity?: string
 }
 
 interface Props {
@@ -93,7 +96,7 @@ export function WriteOffModal({ open, onClose, preset }: Props) {
         form={form}
         layout="vertical"
         requiredMark={false}
-        initialValues={{ reason: 'SALE' }}
+        initialValues={{ reason: preset?.reason ?? 'SALE', quantity: preset?.quantity }}
         onFinish={(values) => {
           setError(null)
           writeOff.mutate(values)

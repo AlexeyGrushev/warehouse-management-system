@@ -40,6 +40,17 @@ export function formatDateTime(iso: string): string {
   })
 }
 
+/** Подпись и цвет для «сколько дней до конца срока годности»; отрицательное — уже просрочено. */
+export function expiryLabel(daysLeft: number): { text: string; color: string } {
+  if (daysLeft < 0) {
+    return { text: `просрочена на ${-daysLeft} дн.`, color: 'red' }
+  }
+  if (daysLeft === 0) {
+    return { text: 'истекает сегодня', color: 'red' }
+  }
+  return { text: `${daysLeft} дн.`, color: daysLeft <= 7 ? 'orange' : 'gold' }
+}
+
 export const RESERVATION_STATUSES = {
   ACTIVE: { label: 'Активен', color: 'blue' },
   FULFILLED: { label: 'Исполнен', color: 'green' },

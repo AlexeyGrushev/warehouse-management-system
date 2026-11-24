@@ -7,6 +7,7 @@ import { fetchLowStock } from '../../api/alerts'
 import { fetchCategoryTree } from '../../api/catalog'
 import type { CategoryNode, LowStockItem, Severity } from '../../api/types'
 import { SEVERITIES, UNIT_LABELS, formatQuantity } from '../../shared'
+import { ExpiringBatchesBlock } from './ExpiringBatchesBlock'
 
 const PAGE_SIZE = 20
 
@@ -141,6 +142,7 @@ export function LowStockPage() {
         }}
         locale={{ emptyText: 'Всё в норме: товаров ниже минимума нет' }}
       />
+      <ExpiringBatchesBlock />
     </>
   )
 }
