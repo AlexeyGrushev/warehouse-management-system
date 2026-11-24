@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.security import hash_password
+from app.db import models as _models  # noqa: F401  регистрирует все таблицы схемы
 from app.db.session import SessionLocal
 from app.modules.auth.models import User
 from app.modules.catalog.models import Category, Product

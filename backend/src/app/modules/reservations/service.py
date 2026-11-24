@@ -73,17 +73,17 @@ def create_reservation(
     for item in sorted(data.items, key=lambda i: i.product_id):
         available = stock_service.available_quantity(session, item.product_id)
         if item.quantity > available:
-            shortages.append((item.product_id, item.quantity, max(available, 0)))
+            shortages.append((products[item.product_id], item.quantity, max(available, 0)))
     if shortages:
         first = shortages[0]
         details = "; ".join(
-            f"товар {pid}: запрошено {req:.3f}, доступно {avail:.3f}"
-            for pid, req, avail in shortages
+            f"{product.name} ({product.sku}): запрошено {req:.3f}, доступно {avail:.3f}"
+            for product, req, avail in shortages
         )
         raise InsufficientStock(
             f"Не хватает товара для резерва ({details})",
             {
-                "product_id": str(first[0]),
+                "product_id": str(first[0].id),
                 "requested": f"{first[1]:.3f}",
                 "available": f"{first[2]:.3f}",
             },

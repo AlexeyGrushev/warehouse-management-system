@@ -54,3 +54,21 @@ def test_every_batch_has_a_receipt(session: Session) -> None:
         )
     )
     assert without_receipt == 0
+
+
+def test_seed_registers_all_tables_in_a_fresh_process() -> None:
+    """На чистом клоне seed запускается отдельным процессом: модели должны подтянуться сами."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from app.db import models  # noqa: F401
+    from app.db.base import Base
+
+    code = "import app.seed; from app.db.base import Base; print(*sorted(Base.metadata.tables))"
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")}
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True, env=env
+    )
+    assert result.stdout.split() == sorted(Base.metadata.tables)

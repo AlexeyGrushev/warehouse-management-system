@@ -233,3 +233,14 @@ def test_list_and_get(client: TestClient, session: Session) -> None:
     assert client.get(URL, params={"status": "NOPE"}, headers=headers).status_code == 422
     assert client.get(f"{URL}/999999", headers=headers).status_code == 404
     assert client.get(f"{URL}/{ids[0]}", headers=headers).json()["reference"] == "ЗАКАЗ-0"
+
+
+def test_shortage_message_names_the_product(client: TestClient, session: Session) -> None:
+    user = make_user(session)
+    product = make_product(session, sku="MLK-001")
+    add_batch(session, product, user.id, "2")
+    response = client.post(URL, json=body([(product.id, "5")]), headers=auth_header(user))
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert "Товар (MLK-001)" in detail
+    assert "запрошено 5.000, доступно 2.000" in detail
