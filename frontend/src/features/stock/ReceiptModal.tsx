@@ -49,6 +49,7 @@ export function ReceiptModal({ open, onClose }: Props) {
       message.success(`Партия ${batch.batch_no} принята`)
       void queryClient.invalidateQueries({ queryKey: ['stock'] })
       void queryClient.invalidateQueries({ queryKey: ['movements'] })
+      void queryClient.invalidateQueries({ queryKey: ['alerts'] })
       close()
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : 'Не удалось принять партию'),

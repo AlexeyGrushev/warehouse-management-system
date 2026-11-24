@@ -53,3 +53,8 @@ export const STOCKTAKING_STATUSES = {
   CLOSED: { label: 'Закрыта', color: 'green' },
   CANCELLED: { label: 'Отменена', color: 'default' },
 } as const
+
+export const SEVERITIES = {
+  CRITICAL: { label: 'Критично', color: 'red', rowBackground: '#fff1f0' },
+  WARNING: { label: 'Заканчивается', color: 'orange', rowBackground: undefined },
+} as const

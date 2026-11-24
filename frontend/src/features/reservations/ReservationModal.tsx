@@ -45,7 +45,7 @@ export function ReservationModal({ open, onClose }: Props) {
       }),
     onSuccess: (reservation) => {
       message.success(`Резерв по заказу ${reservation.reference} создан`)
-      for (const key of ['reservations', 'stock', 'product-stock', 'movements']) {
+      for (const key of ['reservations', 'stock', 'product-stock', 'movements', 'alerts']) {
         void queryClient.invalidateQueries({ queryKey: [key] })
       }
       close()

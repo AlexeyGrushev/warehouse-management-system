@@ -60,7 +60,7 @@ export function WriteOffModal({ open, onClose, preset }: Props) {
           .map((line) => `партия ${line.batch_no}: ${formatQuantity(line.quantity)}`)
           .join('; '),
       })
-      for (const key of ['stock', 'movements', 'product-stock']) {
+      for (const key of ['stock', 'movements', 'product-stock', 'alerts']) {
         void queryClient.invalidateQueries({ queryKey: [key] })
       }
       close()

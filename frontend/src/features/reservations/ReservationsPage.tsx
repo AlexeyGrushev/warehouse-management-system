@@ -36,7 +36,7 @@ export function ReservationsPage() {
   const queryClient = useQueryClient()
 
   const refresh = () => {
-    for (const key of ['reservations', 'stock', 'product-stock', 'movements']) {
+    for (const key of ['reservations', 'stock', 'product-stock', 'movements', 'alerts']) {
       void queryClient.invalidateQueries({ queryKey: [key] })
     }
   }

@@ -7,6 +7,7 @@ import {
   LogoutOutlined,
   ShoppingOutlined,
   TeamOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
 import { Button, Layout, Menu, Space, Tag, Typography } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -24,6 +25,7 @@ const MENU_ITEMS = [
   { key: '/categories', icon: <ApartmentOutlined />, label: 'Категории' },
   { key: '/suppliers', icon: <TeamOutlined />, label: 'Поставщики' },
   { key: '/stock', icon: <DatabaseOutlined />, label: 'Остатки' },
+  { key: '/low-stock', icon: <WarningOutlined />, label: 'Заканчивается' },
   { key: '/reservations', icon: <LockOutlined />, label: 'Резервы' },
   { key: '/stocktakings', icon: <AuditOutlined />, label: 'Инвентаризация' },
   { key: '/movements', icon: <HistoryOutlined />, label: 'Журнал движений' },

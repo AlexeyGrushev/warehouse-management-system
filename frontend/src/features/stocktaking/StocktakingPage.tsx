@@ -72,7 +72,7 @@ export function StocktakingPage() {
     mutationFn: () => closeStocktaking(id),
     onSuccess: (result) => {
       update(result)
-      for (const key of ['stock', 'product-stock', 'movements']) {
+      for (const key of ['stock', 'product-stock', 'movements', 'alerts']) {
         void queryClient.invalidateQueries({ queryKey: [key] })
       }
       message.success('Инвентаризация закрыта, расхождения проведены корректировками')

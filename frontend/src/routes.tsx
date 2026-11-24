@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AppLayout } from './components/AppLayout'
+import { LowStockPage } from './features/alerts/LowStockPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { CategoriesPage } from './features/categories/CategoriesPage'
@@ -22,6 +23,7 @@ export function AppRoutes() {
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/suppliers" element={<SuppliersPage />} />
           <Route path="/stock" element={<StockPage />} />
+          <Route path="/low-stock" element={<LowStockPage />} />
           <Route path="/movements" element={<MovementsPage />} />
           <Route path="/reservations" element={<ReservationsPage />} />
           <Route path="/stocktakings" element={<StocktakingsPage />} />
