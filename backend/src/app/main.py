@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.jobs.scheduler import expiry_loop
+from app.modules.alerts.router import router as alerts_router
 from app.modules.auth.router import router as auth_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.reservations.router import router as reservations_router
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(stock_router, prefix=API_PREFIX)
     app.include_router(reservations_router, prefix=API_PREFIX)
     app.include_router(stocktaking_router, prefix=API_PREFIX)
+    app.include_router(alerts_router, prefix=API_PREFIX)
     return app
 
 

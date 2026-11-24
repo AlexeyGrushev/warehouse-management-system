@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select
+from sqlalchemy import Subquery, func, select
 from sqlalchemy.orm import Session
 
 from app.core.pagination import PageParams, paginate_rows
@@ -109,15 +109,9 @@ def list_movements(
     return items, total
 
 
-def list_stock(
-    session: Session,
-    params: PageParams,
-    q: str | None = None,
-    category_id: int | None = None,
-    low_only: bool = False,
-    is_active: bool | None = True,
-) -> tuple[list[StockRow], int]:
-    totals = (
+def stock_totals() -> Subquery:
+    """Остатки по товарам из журнала движений: общая основа для страницы остатков и отчётов."""
+    return (
         select(
             StockMovement.product_id.label("product_id"),
             func.sum(StockMovement.quantity_delta).label("on_hand"),
@@ -126,6 +120,17 @@ def list_stock(
         .group_by(StockMovement.product_id)
         .subquery()
     )
+
+
+def list_stock(
+    session: Session,
+    params: PageParams,
+    q: str | None = None,
+    category_id: int | None = None,
+    low_only: bool = False,
+    is_active: bool | None = True,
+) -> tuple[list[StockRow], int]:
+    totals = stock_totals()
     on_hand = func.coalesce(totals.c.on_hand, 0)
     reserved = func.coalesce(totals.c.reserved, 0)
     query = (

@@ -17,23 +17,37 @@ def _next() -> int:
     return _counter["n"]
 
 
-def make_category(session: Session, name: str | None = None) -> Category:
-    category = Category(name=name or f"Категория {_next()}")
+def make_category(
+    session: Session, name: str | None = None, parent: Category | None = None
+) -> Category:
+    category = Category(
+        name=name or f"Категория {_next()}", parent_id=parent.id if parent else None
+    )
     session.add(category)
     session.flush()
     return category
 
 
 def make_product(
-    session: Session, unit: str = "pcs", min_stock: str = "0", sku: str | None = None
+    session: Session,
+    unit: str = "pcs",
+    min_stock: str = "0",
+    sku: str | None = None,
+    *,
+    name: str = "Товар",
+    target_stock: str | None = None,
+    category: Category | None = None,
+    is_active: bool = True,
 ) -> Product:
-    category = make_category(session)
+    category = category or make_category(session)
     product = Product(
         sku=sku or f"SKU-{_next()}",
-        name="Товар",
+        name=name,
         category_id=category.id,
         unit=unit,
         min_stock=Decimal(min_stock),
+        target_stock=Decimal(target_stock) if target_stock is not None else None,
+        is_active=is_active,
     )
     session.add(product)
     session.flush()
