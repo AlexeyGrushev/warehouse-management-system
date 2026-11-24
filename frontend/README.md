@@ -11,6 +11,7 @@ npm run build
 ```
 
 Адрес backend для прокси можно поменять переменной `VITE_API_PROXY`.
+Экраны нехватки можно разрабатывать без backend: `VITE_MOCK_ALERTS=true npm run dev` подставляет заглушки из `src/api/alertsMock.ts`.
 
 ## Структура
 ```

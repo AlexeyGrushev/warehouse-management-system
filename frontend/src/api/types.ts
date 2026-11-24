@@ -196,3 +196,33 @@ export interface SupplierInput {
   name: string
   contact: string | null
 }
+
+export type Severity = 'CRITICAL' | 'WARNING'
+
+export interface LowStockItem {
+  product_id: number
+  sku: string
+  name: string
+  unit: string
+  category_id: number
+  category_name: string
+  on_hand: string
+  reserved: string
+  available: string
+  min_stock: string
+  target_stock: string
+  deficit: string
+  recommended_order_qty: string
+  severity: Severity
+}
+
+export interface ExpiringBatch extends Batch {
+  expires_at: string
+  product_sku: string
+  product_name: string
+  product_unit: string
+  supplier_name: string | null
+  // дней до конца срока; для просроченных партий отрицательное
+  days_left: number
+  is_expired: boolean
+}
