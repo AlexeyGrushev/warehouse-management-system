@@ -51,9 +51,9 @@ export function AppLayout() {
       ? {
           ...item,
           label: (
-            <Space size={8}>
+            <Space size={6}>
               {item.label}
-              <Badge count={lowStockCount.data ?? 0} overflowCount={99} />
+              <Badge size="small" count={lowStockCount.data ?? 0} overflowCount={99} />
             </Space>
           ),
         }
@@ -62,7 +62,7 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider breakpoint="lg" collapsedWidth={0} theme="light">
+      <Layout.Sider breakpoint="lg" collapsedWidth={0} width={230} theme="light">
         <Typography.Title level={4} style={{ padding: '16px 24px', margin: 0 }}>
           WMS
         </Typography.Title>
